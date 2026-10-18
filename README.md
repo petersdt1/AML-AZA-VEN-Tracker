@@ -1,45 +1,28 @@
-# AML AZA/VEN Tracker V2.2
+# AML AZA/VEN Tracker V2.3
 
-V2.2 incorporates the first hands-on QI pass.
+V2.3 is a usability/QI patch based on hands-on testing.
 
-## Major changes
-- Diagnostic marrow is no longer scored as a treatment-response marrow.
-- Marrow blast sources are captured separately:
-  - flow cytometry
-  - aspirate/manual differential
-  - core/IHC estimate or range
-- Automatic preferred-blast hierarchy with manual adjudication override.
-- If the only IHC range crosses the 5% response threshold, automated response is held for adjudication.
-- Post-treatment marrows use:
-  - final ELN recovery window through the day before the next cycle when the next cycle is known
-  - a clearly labeled provisional 14-day preview when no next cycle or terminal boundary is yet available
-- Cycle dates use text entry that accepts MM/DD/YYYY or YYYY-MM-DD.
-- VEN start defaults to cycle start.
-- VEN days default to 28.
-- VEN final-dose date auto-calculates from VEN days and held days.
-- Manually changing the final-dose date recalculates VEN days.
-- Restored cycle-level:
-  - G-CSF
-  - HMA planned/actual days
-  - treatment delay
-  - delay duration/reason
-  - VEN interruption/held days
-  - reason VEN shortened
-  - cycle notes
-- Duplicate same-date marrow workflow offers update-existing vs add-separate.
-- Editing/deleting a marrow automatically recalculates timeline, response and relapse.
-- QA now flags:
-  - duplicate same-day marrows
-  - implausible treatment dates
-  - cycle before diagnosis
-  - VEN date inconsistencies
-  - diagnostic marrow after C1D1
-  - missing response-window counts
-- Pre-diagnosis CBCs display as Dx−N instead of Dx+-N.
-- Multiple true marrows in one cycle remain supported.
+## Changes
+- Flow parsed flags: positive green, negative red.
+- NGS parsed flags: positive mutation red, tested/not-detected grey.
+- Quick Import marrow fields clear automatically only after successful confirmation.
+- Diagnostic marrow date auto-populates AML diagnosis date.
+- Diagnosis date remains manually overridable, with visible source/override status.
+- "Other secondary AML" renamed to "Other antecedent hematologic disorder" with optional note.
+- Manual marrow entry is now a fillable editor rather than prompt-by-prompt dialogs.
+- The same marrow editor is used for editing existing marrows.
+- Treatment-cycle, VEN-start, and VEN-final-dose dates use native calendar date inputs.
+- HMA defaults to AZA 7/7 days, decitabine 5/5 days, and oral decitabine/cedazuridine 5/5 days (planned/received).
+- VEN defaults to planned/received 28/28 days.
+- VEN final-dose date auto-calculates from VEN start, days received, and held days.
+- Treatment delay is Yes/No; manual "days delayed" was removed.
+- Delay reasons are multi-select.
+- Planned vs actual HMA/VEN differences are visually flagged.
+- Marrow headline displays "Blasts" with the selected source in parentheses.
+- Subsequent treatment category is optional and simplified; alloHSCT remains captured separately.
 
 ## Safety
 FAKE / DE-IDENTIFIED TEST DATA ONLY. This static GitHub prototype is not an approved research database.
 
 ## Validation
-The blast-source selection logic, ELN risk/response algorithms, and report parsers are prototype workflow logic. They require formal validation against the governing source criteria and institutional research requirements before production use.
+The blast-source selection logic, ELN risk/response algorithms, and report parsers are prototype workflow logic and require formal validation before production use.
