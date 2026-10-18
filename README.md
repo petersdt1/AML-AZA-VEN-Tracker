@@ -1,28 +1,25 @@
-# AML AZA/VEN Tracker V2.3
+# AML AZA/VEN Tracker V2.4
 
-V2.3 is a usability/QI patch based on hands-on testing.
+V2.4 adds data-normalization and baseline abstraction refinements.
 
 ## Changes
-- Flow parsed flags: positive green, negative red.
-- NGS parsed flags: positive mutation red, tested/not-detected grey.
-- Quick Import marrow fields clear automatically only after successful confirmation.
-- Diagnostic marrow date auto-populates AML diagnosis date.
-- Diagnosis date remains manually overridable, with visible source/override status.
-- "Other secondary AML" renamed to "Other antecedent hematologic disorder" with optional note.
-- Manual marrow entry is now a fillable editor rather than prompt-by-prompt dialogs.
-- The same marrow editor is used for editing existing marrows.
-- Treatment-cycle, VEN-start, and VEN-final-dose dates use native calendar date inputs.
-- HMA defaults to AZA 7/7 days, decitabine 5/5 days, and oral decitabine/cedazuridine 5/5 days (planned/received).
-- VEN defaults to planned/received 28/28 days.
-- VEN final-dose date auto-calculates from VEN start, days received, and held days.
-- Treatment delay is Yes/No; manual "days delayed" was removed.
-- Delay reasons are multi-select.
-- Planned vs actual HMA/VEN differences are visually flagged.
-- Marrow headline displays "Blasts" with the selected source in parentheses.
-- Subsequent treatment category is optional and simplified; alloHSCT remains captured separately.
+- All user-entered dates are plain-text fields.
+- Accepts common formats such as 2/4/24, 2/4/2024, 02/04/2024, 2024-02-04, and 2-4-2024.
+- Dates normalize to MM/DD/YYYY for display while remaining ISO internally.
+- NGS parser recognizes VUS / Tier III / Tier 3 / variant-of-uncertain-significance wording.
+- Detected VUS are explicitly labeled "(VUS)" and shown amber.
+- VUS do not contribute to ELN-driving mutation logic.
+- Baseline CBC automatically selects one complete pretreatment CBC on the diagnostic marrow date when possible, otherwise the nearest complete CBC within ±14 days.
+- Ties favor the pre-marrow CBC.
+- Manual baseline-CBC override is available.
+- Baseline CBC timing is displayed consistently as Dx−N, Dx+0, or Dx+N relative to the final diagnosis date.
+- Diagnostic cytogenetics are automatically categorized with transparent parser evidence:
+  normal, abnormal non-complex/non-monosomal, complex, monosomal, complex + monosomal, failed/insufficient, or unknown.
+- Cytogenetic category can be manually overridden.
+- Raw diagnostic cytogenetics and FISH remain visible.
+
+## Important
+The cytogenetic categorizer is a transparent prototype heuristic, not a validated clinical cytogenetics engine. Complex/monosomal karyotype and ELN logic require formal validation before production research use.
 
 ## Safety
 FAKE / DE-IDENTIFIED TEST DATA ONLY. This static GitHub prototype is not an approved research database.
-
-## Validation
-The blast-source selection logic, ELN risk/response algorithms, and report parsers are prototype workflow logic and require formal validation before production use.
