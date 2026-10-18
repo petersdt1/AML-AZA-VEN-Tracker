@@ -1,4 +1,4 @@
-# AML AZA/VEN Tracker V2.9
+# AML AZA/VEN Tracker V2.10
 
 V2.7 narrows flow extraction to the AML blast phenotype, adds conditional MRD entry to Quick Import, and adds a compact conventional-cytogenetics preview with granular export.
 
@@ -80,3 +80,16 @@ V2.9 intentionally freezes the V2.8 UI and changes parser/data-quality logic onl
   2. Calculated response + MRD (MRD omitted for diagnostic marrows)
 - The biology summary is positive-only and compact; the complete parsed Flow/NGS/FISH details remain available below.
 - No V2.8 element IDs were removed.
+
+
+## V2.10 response-readiness and normalization release
+- PB blasts no longer default to absent after Quick Import. Explicit peripheral-smear blast % is captured when available; otherwise status is Unknown.
+- EMD defaults to Unknown unless adjudicated.
+- Bone-marrow cards provide direct PB-blast and EMD controls for rapid response completion.
+- Non-diagnostic marrows show response readiness and missing variables.
+- Missing PB/EMD/count data no longer silently produces a finalized response category.
+- Aspirate adequacy is captured and used in the preferred-blast hierarchy.
+- Conventional cytogenetic parsing preserves marker chromosomes and derivative losses such as +mar1 and -der(...).
+- FISH/cytogenetic observations keep raw source wording plus canonical and broader AML concepts.
+- Executive molecular/cytogenetic summary excludes VUS and de-duplicates normalized concepts.
+- Expanded parsed details now include Conventional cytogenetics.
