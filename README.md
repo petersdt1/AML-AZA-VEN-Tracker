@@ -1,4 +1,4 @@
-# AML AZA/VEN Tracker V2.7
+# AML AZA/VEN Tracker V2.8
 
 V2.7 narrows flow extraction to the AML blast phenotype, adds conditional MRD entry to Quick Import, and adds a compact conventional-cytogenetics preview with granular export.
 
@@ -48,3 +48,13 @@ FAKE / DE-IDENTIFIED TEST DATA ONLY. This static GitHub prototype is not an appr
 - Pathology text such as `Flow cytometry reports increased aberrant myeloblasts, 30%` now supplies the structured flow blast percentage.
 - Aspirate differential tables with `Blast %` on one line and the numeric value on the next line are now parsed.
 - If flow-blast wording is found but the percentage still fails extraction, Quick Import shows a QA warning rather than silently falling back.
+
+
+## Raw-source review in Edit Marrow
+- Each structured subsection now includes a collapsed, read-only `Show raw source` area.
+- Flow shows the original raw flow report.
+- NGS shows both the detected-variant text and the genes-tested text.
+- Conventional cytogenetics shows the original karyotype text.
+- FISH shows the original FISH report text.
+- MRD shows stored MRD target/result or method note when available.
+- The raw source stays collapsed by default so the editor remains compact, but coordinators can copy missed abnormalities directly into `+ Add marker`, `+ Add variant`, `+ Add abnormality`, or `+ Add FISH result`.

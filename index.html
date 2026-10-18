@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AML AZA/VEN Tracker V2.7</title>
+<title>AML AZA/VEN Tracker V2.8</title>
 <style>
 :root{
   --bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#667085;--line:#dde3ec;
@@ -43,7 +43,7 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 </style>
 </head>
 <body>
-<header><h1>AML AZA/VEN Longitudinal Tracker V2.7</h1><div class="sub" id="hdr">No patient selected</div></header>
+<header><h1>AML AZA/VEN Longitudinal Tracker V2.8</h1><div class="sub" id="hdr">No patient selected</div></header>
 <div class="demo"><b>DEMO / FAKE DATA ONLY.</b> Static GitHub prototype. Do not enter names, MRNs, DOBs, or PHI.</div>
 <div class="wrap"><div class="layout">
 <nav>
@@ -144,22 +144,29 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 
 <details id="structuredReview" style="margin-top:12px">
 <summary><b>Structured data review</b> <span class="small">Edit parser-derived Flow, NGS, cytogenetics, FISH, and MRD only when needed</span></summary>
-<div style="padding-top:10px">
+<div style="padding-top:10px"><div class="small" style="margin-bottom:8px">Raw source text is read-only and collapsed by default so missed abnormalities can be copied into the editable structured rows below.</div>
 
 <details>
 <summary><b>Flow / blast immunophenotype</b> <span class="small" id="flowEditCount"></span></summary>
+<details style="margin-top:8px"><summary class="small">Show raw source</summary><textarea id="rawEditFlow" readonly class="notes" style="margin-top:6px;min-height:120px"></textarea></details>
 <div id="flowEditRows" style="margin-top:8px"></div>
 <button type="button" class="btn alt" style="margin-top:8px" onclick="addStructuredRow('flow')">+ Add marker</button>
 </details>
 
 <details style="margin-top:8px">
 <summary><b>NGS</b> <span class="small" id="ngsEditCount"></span></summary>
+<details style="margin-top:8px"><summary class="small">Show raw source</summary>
+<div class="row two" style="margin-top:6px">
+<div><label>Detected variants / molecular report</label><textarea id="rawEditNGSPos" readonly class="notes" style="min-height:120px"></textarea></div>
+<div><label>Genes tested</label><textarea id="rawEditNGSTested" readonly class="notes" style="min-height:120px"></textarea></div>
+</div></details>
 <div id="ngsEditRows" style="margin-top:8px"></div>
 <button type="button" class="btn alt" style="margin-top:8px" onclick="addStructuredRow('ngs')">+ Add variant</button>
 </details>
 
 <details style="margin-top:8px">
 <summary><b>Conventional cytogenetics</b> <span class="small" id="cytoEditCount"></span></summary>
+<details style="margin-top:8px"><summary class="small">Show raw source</summary><textarea id="rawEditCyto" readonly class="notes" style="margin-top:6px;min-height:120px"></textarea></details>
 <div id="cytoEditRows" style="margin-top:8px"></div>
 <div id="cytoEditPreview" class="small" style="margin-top:8px"></div>
 <button type="button" class="btn alt" style="margin-top:8px" onclick="addStructuredRow('cyto')">+ Add abnormality</button>
@@ -167,6 +174,7 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 
 <details style="margin-top:8px">
 <summary><b>FISH</b> <span class="small" id="fishEditCount"></span></summary>
+<details style="margin-top:8px"><summary class="small">Show raw source</summary><textarea id="rawEditFish" readonly class="notes" style="margin-top:6px;min-height:120px"></textarea></details>
 <div id="fishEditRows" style="margin-top:8px"></div>
 <button type="button" class="btn alt" style="margin-top:8px" onclick="addStructuredRow('fish')">+ Add FISH result</button>
 </details>
@@ -175,6 +183,7 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 <summary><b>MRD</b></summary>
 <div id="mrdDiagnosticNote" class="small" style="display:none;margin-top:8px">MRD is not applicable to the diagnostic marrow.</div>
 <div id="mrdEditFields" style="margin-top:8px">
+<details style="margin-bottom:8px"><summary class="small">Show MRD source / note</summary><textarea id="rawEditMRD" readonly class="notes" style="margin-top:6px;min-height:90px"></textarea></details>
 <div class="row two"><div><label>MRD status</label><select id="meMRD"><option></option><option>Negative</option><option>Positive</option><option>Indeterminate</option><option>Not performed</option><option>Unknown</option></select></div><div><label>MRD target / result (optional)</label><input id="meMRDTarget" placeholder="e.g. NPM1; RUNX1::RUNX1T1; 0.08%"></div></div>
 <label>MRD method(s)</label><div>
 <label style="display:inline-flex;align-items:center;margin-right:14px;font-weight:400"><input type="checkbox" id="mrdMFC" style="width:auto;margin-right:5px"> MFC</label>
@@ -220,7 +229,7 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 </main></div></div>
 
 <script>
-const K='AML_AV_V27';
+const K='AML_AV_V28';
 let D=JSON.parse(localStorage.getItem(K)||'null')||{
   base:{},cycles:[],marrows:[],cbc:[],
   out:{relapse_date_auto:'',relapse_date_final:'',relapse_basis:'',relapse_overridden:false},
@@ -754,6 +763,12 @@ function renderStructuredEditor(m){
    cyto:cloneObj(m?.cytoObservations||cytogeneticObservations(m?.raw?.cyto||'')).map(x=>({...x,keep:true})),
    fish:cloneObj(m?.fishObservations||fishparse((m?.raw?.fish||'')+' '+(m?.raw?.cyto||''))).map(x=>({...x,keep:true}))
  };
+ if($('rawEditFlow'))$('rawEditFlow').value=m?.raw?.flow||'';
+ if($('rawEditNGSPos'))$('rawEditNGSPos').value=m?.raw?.ngspos||'';
+ if($('rawEditNGSTested'))$('rawEditNGSTested').value=m?.raw?.ngstest||'';
+ if($('rawEditCyto'))$('rawEditCyto').value=m?.raw?.cyto||'';
+ if($('rawEditFish'))$('rawEditFish').value=m?.raw?.fish||'';
+ if($('rawEditMRD'))$('rawEditMRD').value=m?.mrdTarget||m?.mrdOther||'No dedicated raw MRD source text stored for this marrow.';
  renderStructuredRows()
 }
 function renderStructuredRows(){
@@ -1162,7 +1177,7 @@ function render(){
  ev.sort((a,b)=>a[0].localeCompare(b[0]));$('tl').innerHTML=ev.map(x=>`<div class=event><b>${displayDate(x[0])}</b><div>${x[1]}</div></div>`).join('')||'<p class=help>No dated events.</p>'
 }
 function dl(n,t,type='text/plain'){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type}));a.download=n;a.click()}
-function jsonOut(){dl((D.base.study||'AML-demo')+'_V2.7.json',JSON.stringify(D,null,2),'application/json')}
+function jsonOut(){dl((D.base.study||'AML-demo')+'_V2.8.json',JSON.stringify(D,null,2),'application/json')}
 function csv(rows){if(!rows.length)return'';let k=[...new Set(rows.flatMap(Object.keys))];return[k.join(','),...rows.map(r=>k.map(x=>`"${String(r[x]??'').replaceAll('"','""')}"`).join(','))].join('\n')}
 function csvOut(k){
  let r=k==='cycles'?D.cycles.map(x=>({study_id:D.base.study,...x})):
