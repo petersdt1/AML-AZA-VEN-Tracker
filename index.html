@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AML AZA/VEN Tracker V2.4</title>
+<title>AML AZA/VEN Tracker V2.5</title>
 <style>
 :root{
   --bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#667085;--line:#dde3ec;
@@ -31,7 +31,7 @@ textarea{min-height:105px;resize:vertical}.big{min-height:175px}.notes{min-heigh
 .btn{border:0;background:var(--accent);color:#fff;border-radius:8px;padding:9px 13px;font-weight:650;cursor:pointer}
 .alt{background:#fff;color:var(--accent);border:1px solid #a9bae3}.danger{background:#fff;color:var(--bad);border:1px solid #e7aaa6}
 .tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.metric{border:1px solid var(--line);border-radius:9px;padding:11px;background:#fafbfd}.metric b{display:block;font-size:18px;margin-top:3px}
-.pill{display:inline-block;padding:3px 7px;border-radius:999px;background:#eef1f5;font-size:11px;margin:2px}.pill.ok{background:#e8f6ee;color:var(--ok)}.pill.warn{background:#fff3d8;color:var(--warn)}.pill.purple{background:var(--purple-bg);color:var(--purple)}.pill.flowpos{background:#e8f6ee;color:#16794b}.pill.flowneg{background:#fdecea;color:#b3261e}.pill.ngspos{background:#fdecea;color:#b3261e}.pill.ngsvus{background:#fff3d8;color:#986400}.pill.ngsneg{background:#eef1f5;color:#596579}.pill.neutral{background:#eef1f5;color:#596579}
+.pill{display:inline-block;padding:3px 7px;border-radius:999px;background:#eef1f5;font-size:11px;margin:2px}.pill.ok{background:#e8f6ee;color:var(--ok)}.pill.warn{background:#fff3d8;color:var(--warn)}.pill.purple{background:var(--purple-bg);color:var(--purple)}.pill.flowpos{background:#e8f6ee;color:#16794b}.pill.flowneg{background:#fdecea;color:#b3261e}.pill.ngspos{background:#fdecea;color:#b3261e}.pill.ngsvus{background:#fff3d8;color:#986400}.pill.ngsneg{background:#eef1f5;color:#596579}.pill.neutral{background:#eef1f5;color:#596579}.pill.fishpos{background:#fdecea;color:#b3261e}.pill.fishneg{background:#eef1f5;color:#596579}
 .stage{margin-top:12px;padding:12px;background:var(--warn-bg);border-left:4px solid #e3a11b;border-radius:6px}.good{margin-top:12px;padding:12px;background:var(--ok-bg);border-left:4px solid var(--ok);border-radius:6px}.badbox{margin-top:12px;padding:12px;background:var(--bad-bg);border-left:4px solid var(--bad);border-radius:6px}.info{margin-top:12px;padding:12px;background:var(--accent-soft);border-left:4px solid var(--accent);border-radius:6px}
 table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{color:#596579}
 .timeline{border-left:3px solid #bac5d8;padding-left:18px;margin-left:8px}.event{margin:14px 0}
@@ -43,7 +43,7 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 </style>
 </head>
 <body>
-<header><h1>AML AZA/VEN Longitudinal Tracker V2.4</h1><div class="sub" id="hdr">No patient selected</div></header>
+<header><h1>AML AZA/VEN Longitudinal Tracker V2.5</h1><div class="sub" id="hdr">No patient selected</div></header>
 <div class="demo"><b>DEMO / FAKE DATA ONLY.</b> Static GitHub prototype. Do not enter names, MRNs, DOBs, or PHI.</div>
 <div class="wrap"><div class="layout">
 <nav>
@@ -158,7 +158,7 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 </main></div></div>
 
 <script>
-const K='AML_AV_V24';
+const K='AML_AV_V25';
 let D=JSON.parse(localStorage.getItem(K)||'null')||{
   base:{},cycles:[],marrows:[],cbc:[],
   out:{relapse_date_auto:'',relapse_date_final:'',relapse_basis:'',relapse_overridden:false},
@@ -322,7 +322,7 @@ function parseCBC(id){
  if(cur)blocks.push(cur);
  blocks=blocks.filter(x=>[x.wbc,x.anc,x.hgb,x.plt].some(v=>v!=null));
  let map=new Map();blocks.forEach(x=>map.set(x.timestamp,x));window._cbcStage=[...map.values()];
- $('cbcstage').innerHTML=window._cbcStage.length?`<div class=stage><b>${window._cbcStage.length} CBC observations recognized.</b><br><span class=small>${window._cbcStage.filter(x=>x.anc!=null).length} with ANC · ${window._cbcStage.filter(x=>x.plt!=null).length} with platelets · ${new Set(window._cbcStage.map(x=>x.date)).size} calendar days</span><div class=tools><button class=btn onclick="confirmCBC()">Confirm import</button></div></div>`:`<div class=stage>No Epic-style dated CBC blocks recognized.</div>`
+ $('cbcstage').innerHTML=window._cbcStage.length?`<div class=stage><b>${window._cbcStage.length} CBC observations recognized.</b><br><span class=small>${window._cbcStage.filter(x=>x.wbc!=null).length} with WBC · ${window._cbcStage.filter(x=>x.anc!=null).length} with ANC · ${window._cbcStage.filter(x=>x.hgb!=null).length} with Hgb · ${window._cbcStage.filter(x=>x.plt!=null).length} with platelets · ${window._cbcStage.filter(x=>[x.wbc,x.anc,x.hgb,x.plt].every(v=>v!=null)).length} complete WBC/ANC/Hgb/Plt sets</span><div class=tools><button class=btn onclick="confirmCBC()">Confirm import</button></div></div>`:`<div class=stage>No Epic-style dated CBC blocks recognized.</div>`
 }
 function confirmCBC(){
  let map=new Map(D.cbc.map(x=>[x.timestamp,x]));(window._cbcStage||[]).forEach(x=>map.set(x.timestamp,{...(map.get(x.timestamp)||{}),...x}));
@@ -353,7 +353,11 @@ function manualCBC(){
  D.cbc.push({timestamp:normalized,date:normalized.slice(0,10),wbc:wbc===''?null:Number(wbc),anc:anc===''?null:Number(anc),hgb:hgb===''?null:Number(hgb),plt:plt===''?null:Number(plt),anc_source:'Manual entry',source:'manual abstraction'});
  D.cbc.sort((a,b)=>a.timestamp.localeCompare(b.timestamp));save()
 }
-function editCBC(i){let x=D.cbc[i],anc=prompt('ANC',x.anc??''),plt=prompt('Platelets',x.plt??'');if(anc===null||plt===null)return;x.anc=anc===''?null:Number(anc);x.plt=plt===''?null:Number(plt);x.source='manual override';save()}
+function editCBC(i){
+ let x=D.cbc[i],wbc=prompt('WBC',x.wbc??''),anc=prompt('ANC',x.anc??''),hgb=prompt('Hgb',x.hgb??''),plt=prompt('Platelets',x.plt??'');
+ if([wbc,anc,hgb,plt].some(v=>v===null))return;
+ x.wbc=wbc===''?null:Number(wbc);x.anc=anc===''?null:Number(anc);x.hgb=hgb===''?null:Number(hgb);x.plt=plt===''?null:Number(plt);x.source='manual override';save()
+}
 function delCBC(i){if(confirm('Delete this CBC observation?')){D.cbc.splice(i,1);save()}}
 
 function extractBlastData(path,flow){
@@ -382,27 +386,106 @@ function preferredBlast(m){
  }
  return{value:null,source:'No structured blast source',indeterminate:true}
 }
+function testedGenes(text){
+ let stop=new Set(['FULL','EXON','COVERAGE','EXPRESSION','GENES','GENE','TESTED','PANEL','NGS','DNA','RNA','SEQUENCING','MUTATION','MUTATIONS','DETECTED','VARIANT','VARIANTS','AND','THE','OF','WITH','BY','NOT','SHOWN']);
+ let hits=(String(text||'').match(/\b[A-Z][A-Z0-9]{1,11}\b/g)||[]).filter(x=>!stop.has(x));
+ return [...new Set(hits)]
+}
+function variantClass(s){
+ s=String(s||'');
+ if(/\bVUS\b|variant\s+of\s+(?:unknown|uncertain)\s+significance|\bunknown\s+significance\b|\buncertain\s+significance\b|tier\s*(?:iii|3)\b/i.test(s))return'VUS';
+ if(/likely\s+pathogenic/i.test(s))return'Likely pathogenic';
+ if(/\bpathogenic\b/i.test(s))return'Pathogenic';
+ return'Reported'
+}
 function muts(raw,tested){
- let known=['NPM1','FLT3','IDH1','IDH2','TP53','NRAS','KRAS','DDX41','CEBPA','RUNX1','ASXL1','SRSF2','SF3B1','U2AF1','ZRSR2','BCOR','STAG2','EZH2','ETV6'];
- let lines=String(raw||'').split(/\r?\n/),a=[];
- known.forEach(g=>{
-   let line=lines.find(x=>new RegExp('\\b'+g+'\\b','i').test(x));
-   if(line){
-     let vm=/(?:VAF|AF|allele fraction)[^0-9]*([0-9.]+)\s*%/i.exec(line);
-     if(!vm)vm=new RegExp(g+'[^\\n]*?([0-9.]+)\\s*%','i').exec(line);
-     let cls=/\bVUS\b|variant of uncertain|tier\s*(?:iii|3)\b/i.test(line)?'VUS':
-             /likely pathogenic/i.test(line)?'Likely pathogenic':
-             /\bpathogenic\b/i.test(line)?'Pathogenic':'Reported';
-     a.push({gene:g,result:'Positive',classification:cls,vaf:vm?Number(vm[1]):null,source:'raw extraction',raw_description:line.trim()})
-   }else if(new RegExp('\\b'+g+'\\b','i').test(tested||'')){
-     a.push({gene:g,result:'Negative',classification:'Not detected',vaf:null,source:'tested list + not detected'})
-   }
+ raw=String(raw||'');let out=[],covered=[];
+ let starts=[...raw.matchAll(/\|\s*(Variant|Pathogenic|Likely pathogenic|VUS|Unknown significance|Uncertain significance|Variant of unknown significance|Variant of uncertain significance)\s*\|\s*([A-Z][A-Z0-9]{1,11})\s*\|/gi)];
+ starts.forEach((m,i)=>{
+   let start=m.index,end=i+1<starts.length?starts[i+1].index:raw.length,block=raw.slice(start,end);
+   let fields=block.split('|').map(x=>x.trim()).filter(Boolean);
+   let label=fields[0]||m[1],gene=(fields[1]||m[2]).toUpperCase();
+   let protein=fields.find(x=>/^p\.\(?/i.test(x))||'';
+   let cdna=fields.find(x=>/^c\./i.test(x))||'';
+   let transcript=fields.find(x=>/^N[MR]_\d+/i.test(x))||'';
+   let vm=block.match(/([0-9]+(?:\.[0-9]+)?)\s*%/);
+   out.push({gene,result:'Positive',classification:variantClass(label+' '+block),protein,cdna,transcript,vaf:vm?Number(vm[1]):null,source:'raw extraction',raw_description:block.replace(/\s+/g,' ').trim()});
+   covered.push([start,end]);
  });
- return a
+ let lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+ lines.forEach(line=>{
+   let offset=raw.indexOf(line);
+   if(covered.some(([a,b])=>offset>=a&&offset<b))return;
+   let gm=line.match(/\b([A-Z][A-Z0-9]{1,11})\b/);if(!gm)return;
+   let gene=gm[1];
+   if(['VAF','COSM','NM','DNA','RNA'].includes(gene))return;
+   let hasVariant=/\bp\.[A-Za-z0-9_*?().-]+|\bc\.[A-Za-z0-9_>*+?.()-]+|\bVAF\b|\bpathogenic\b|\bVUS\b|significance/i.test(line);
+   if(!hasVariant)return;
+   let protein=(line.match(/\bp\.\(?[A-Za-z0-9_*?().-]+\)?/i)||[])[0]||'';
+   let cdna=(line.match(/\bc\.[A-Za-z0-9_>*+?.()-]+/i)||[])[0]||'';
+   let transcript=(line.match(/\bN[MR]_\d+(?:\.\d+)?/i)||[])[0]||'';
+   let vm=line.match(/(?:VAF|AF|allele fraction)[^0-9]*([0-9.]+)\s*%/i)||line.match(/([0-9.]+)\s*%/);
+   out.push({gene,result:'Positive',classification:variantClass(line),protein,cdna,transcript,vaf:vm?Number(vm[1]):null,source:'raw extraction',raw_description:line});
+ });
+ let positiveGenes=new Set(out.map(x=>x.gene.toUpperCase()));
+ testedGenes(tested).forEach(g=>{if(!positiveGenes.has(g))out.push({gene:g,result:'Negative',classification:'Not detected',protein:'',cdna:'',transcript:'',vaf:null,source:'tested list + not detected',raw_description:''})});
+ return out
 }
 function flowparse(s){
- let a=[],re=/\b((?:cy)?CD\d{1,3}|HLA-DR|MPO|TdT)\b([^.;\n]*)/gi,m;
- while((m=re.exec(s))){let t=m[2],res=/negative|not express/i.test(t)?'Negative':/express|positive/i.test(t)?'Positive':'Reported',mod=(t.match(/\b(bright|dim|partial|variable|heterogeneous|aberrant|moderate)\b/gi)||[]).join(', ');a.push({marker:m[1],result:res,modifier:mod||'Not stated'})}return a
+ let raw=String(s||''),records=[],markerRe=/\b((?:cy)?CD\d{1,3}|HLA-DR|MPO|TdT)\b/gi;
+ let sentences=raw.split(/(?<=[.;])\s+|\n+/).filter(Boolean);
+ sentences.forEach(sentence=>{
+   let sm=[...sentence.matchAll(markerRe)];if(!sm.length)return;
+   let sentenceNeg=/^\s*(?:negative|not expressed?|lack(?:s|ing)?)\b/i.test(sentence)||/\bnegative\s+for\b/i.test(sentence);
+   let sentencePos=/\bexpress(?:es|ed|ing)?\b|\bpositive\s+for\b/i.test(sentence);
+   sm.forEach(mm=>{
+     let marker=mm[1].toUpperCase(),idx=mm.index||0,left=sentence.slice(Math.max(0,idx-30),idx),right=sentence.slice(idx+mm[0].length,idx+mm[0].length+35),ctx=left+' '+mm[0]+' '+right;
+     let result=/\bnegative\b|\bnot\s+express/i.test(ctx)||sentenceNeg?'Negative':/\bpositive\b|\bexpress/i.test(ctx)||sentencePos?'Positive':'Reported';
+     let l=left.toLowerCase(),lastNeg=Math.max(l.lastIndexOf('negative for'),l.lastIndexOf('not express')),lastPos=Math.max(l.lastIndexOf('express'),l.lastIndexOf('positive for'));
+     if(lastNeg>=0||lastPos>=0)result=lastNeg>lastPos?'Negative':'Positive';
+     let near=(left.slice(-18)+' '+right.slice(0,18)).match(/\b(bright|moderate|dim|partial|variable|heterogeneous|aberrant)\b/gi)||[];
+     let mods=[...new Set(near.map(x=>x.toLowerCase()))];
+     records.push({marker,result,modifier:mods.join('/')});
+   });
+ });
+ let byMarker={};records.forEach(r=>{(byMarker[r.marker]??=[]).push(r)});
+ let out=[];
+ Object.entries(byMarker).forEach(([marker,arr])=>{
+   if(arr.some(x=>x.result!=='Reported'))arr=arr.filter(x=>x.result!=='Reported');
+   ['Positive','Negative','Reported'].forEach(result=>{
+     let same=arr.filter(x=>x.result===result);if(!same.length)return;
+     let mods=[...new Set(same.flatMap(x=>(x.modifier||'').split('/').filter(Boolean)))];
+     out.push({marker,result,modifier:mods.join('/'),conflict:false});
+   });
+   let definitive=out.filter(x=>x.marker===marker&&x.result!=='Reported');
+   if(new Set(definitive.map(x=>x.result)).size>1)definitive.forEach(x=>x.conflict=true);
+ });
+ return out
+}
+function fishparse(s){
+ let raw=String(s||'').replace(/\r/g,' ').replace(/\n+/g,' ').replace(/\s+/g,' ').trim(),out=[],seen=new Set();
+ if(!raw)return out;
+ let patterns=[
+   /((?:Rearrangement\s+of\s+)?(?:3q26|11q23|KMT2A|MECOM|RUNX1|CBFB|RARA)[^–—;]{0,45}?)[\s]*[–—-]\s*(Not\s+Detected|Detected|Positive|Negative)/gi,
+   /((?:Monosomy|Trisomy)\s+\d+[^–—;]{0,25}?)[\s]*[–—-]\s*(Not\s+Detected|Detected|Positive|Negative)/gi,
+   /((?:Del(?:etion)?\.?\s*[()]?[0-9]+[pq][0-9.]*[)]?|Del\s+\d+[pq]?)[^–—;]{0,25}?)[\s]*[–—-]\s*(Not\s+Detected|Detected|Positive|Negative)/gi,
+   /((?:t|inv)\([^)]+\)[^–—;]{0,20}?)[\s]*[–—-]\s*(Not\s+Detected|Detected|Positive|Negative)/gi
+ ];
+ patterns.forEach(re=>{let m;while((m=re.exec(raw))){
+   let target=m[1].trim().replace(/\s+/g,' '),result=/^not\s+detected$|^negative$/i.test(m[2])?'Negative':'Positive',key=target.toLowerCase()+'|'+result;
+   if(!seen.has(key)){seen.add(key);out.push({target,result,raw_description:m[0].trim()})}
+ }});
+ let pos=raw.match(/POSITIVE\s+for\s+(.+?)(?:\.|$)/i);
+ if(pos){
+   for(let m of pos[1].matchAll(/deletion\s+of\s+([0-9]+[pq]?)/gi)){let target='Deletion of '+m[1],key=target.toLowerCase()+'|Positive';if(!seen.has(key)){seen.add(key);out.push({target,result:'Positive',raw_description:pos[0]})}}
+   let copies=pos[1].match(/three\s+copies\s+of\s+([A-Z][A-Z0-9]{1,11})/i);
+   if(copies){let target='Three copies of '+copies[1],key=target.toLowerCase()+'|Positive';if(!seen.has(key)){seen.add(key);out.push({target,result:'Positive',raw_description:pos[0]})}}
+ }
+ return out
+}
+function flowDisplay(x){return `${x.marker} ${x.result}${x.modifier?` (${x.modifier})`:''}${x.conflict?' ⚠':''}`}
+function variantDisplay(x){
+ let bits=[x.gene];if(x.protein)bits.push(x.protein);else if(x.cdna)bits.push(x.cdna);if(x.vaf!=null)bits.push(`VAF ${x.vaf}%`);if(x.classification==='VUS')bits.push('(VUS)');return bits.join(' ')
 }
 function extractBM(){
  if(!$('bmdate').value){$('bmstage').innerHTML='<div class=stage>Enter a marrow date.</div>';return}
@@ -412,7 +495,7 @@ function extractBM(){
  blastAspirate:bd.aspirate,blastFlow:bd.flow,blastIhcLow:bd.ihcLow,blastIhcHigh:bd.ihcHigh,flowAdequate:true,preferredBlastManual:null,
  pb:'Absent',emd:'Absent/resolved',
  raw:{path,flow:$('flow').value,cyto:$('cyto').value,fish:$('fish').value,ngspos:$('ngspos').value,ngstest:$('ngstest').value},
- flow:flowparse($('flow').value),mutations:muts($('ngspos').value,$('ngstest').value),
+ flow:flowparse($('flow').value),mutations:muts($('ngspos').value,$('ngstest').value),fishObservations:fishparse($('fish').value+' '+$('cyto').value),
  cytoHits:[...new Set((($('cyto').value+' '+$('fish').value).match(/t\(8;21\)|inv\(16\)|t\(16;16\)|-7|del\(5q\)|-5|inv\(3\)|t\(3;3\)|t\(9;22\)/gi)||[]))],
  manualAnc:null,manualAncDate:'',manualPlt:null,manualPltDate:'',source:'raw source extraction'};
  window._bmStage=o;
@@ -420,8 +503,10 @@ function extractBM(){
  $('bmstage').innerHTML=`<div class=stage><b>Extraction staging area</b><p>${displayDate(o.date)} · ${o.diagnostic?'Diagnostic marrow':'Follow-up marrow'} · ${c?'C'+c.n+'D'+(dd(c.start,o.date)+1):'not assigned to treatment cycle'}</p>
  <p>Aspirate blasts: <b>${o.blastAspirate??'not extracted'}</b> · Flow blasts: <b>${o.blastFlow??'not extracted'}</b> · IHC/core: <b>${o.blastIhcLow!=null?(o.blastIhcLow===o.blastIhcHigh?o.blastIhcLow:o.blastIhcLow+'–'+o.blastIhcHigh)+'%':'not extracted'}</b></p>
  <p>Preferred blast value: <b>${pb.value!=null?pb.value+'%':'needs review'}</b> <span class=small>${pb.source}</span></p>
- <p>Flow markers: <b>${o.flow.length}</b> · Molecular observations: <b>${o.mutations.length}</b></p>
- <p>${o.mutations.map(x=>`<span class="pill ${x.classification==='VUS'?'ngsvus':x.result==='Positive'?'ngspos':'ngsneg'}">${x.gene} ${x.result}${x.vaf!=null?' '+x.vaf+'%':''}${x.classification==='VUS'?' (VUS)':''}</span>`).join(' ')}</p>
+ <p>Flow markers: <b>${o.flow.length}</b> · Detected NGS variants: <b>${o.mutations.filter(x=>x.result==='Positive').length}</b> · Tested/not-detected genes: <b>${o.mutations.filter(x=>x.result==='Negative').length}</b> · FISH observations: <b>${o.fishObservations.length}</b></p>
+ <p><b>Flow</b><br>${o.flow.map(x=>`<span class="pill ${x.result==='Positive'?'flowpos':x.result==='Negative'?'flowneg':'neutral'}">${flowDisplay(x)}</span>`).join(' ')||'<span class=small>No structured flow markers extracted.</span>'}</p>
+ <p><b>NGS</b><br>${o.mutations.map(x=>`<span class="pill ${x.classification==='VUS'?'ngsvus':x.result==='Positive'?'ngspos':'ngsneg'}">${x.result==='Negative'?x.gene+' Negative':variantDisplay(x)}</span>`).join(' ')||'<span class=small>No structured NGS observations extracted.</span>'}</p>
+ <p><b>FISH</b><br>${o.fishObservations.map(x=>`<span class="pill ${x.result==='Positive'?'fishpos':'fishneg'}">${x.target} ${x.result}</span>`).join(' ')||'<span class=small>No structured FISH observations extracted.</span>'}</p>
  <div class=tools><button class=btn onclick="confirmBM()">Confirm import</button></div></div>`
 }
 function confirmBM(){
@@ -461,7 +546,7 @@ function closeMarrowEditor(){$('marrowEditor').style.display='none';marrowEditIn
 function saveMarrowEditor(){
  let rawDate=$('meDate').value;if(!rawDate){alert('Enter a marrow date.');return}let date=normalizeDateText(rawDate,'Marrow date');if(date===null)return
  let diagnostic=$('meDiagnostic').checked,existing=marrowEditIndex===null?null:D.marrows[marrowEditIndex];
- let o=existing||{id:'BM'+Date.now(),raw:{path:'',flow:'',cyto:'',fish:'',ngspos:'',ngstest:''},flow:[],mutations:[],cytoHits:[],manualAnc:null,manualAncDate:'',manualPlt:null,manualPltDate:''};
+ let o=existing||{id:'BM'+Date.now(),raw:{path:'',flow:'',cyto:'',fish:'',ngspos:'',ngstest:''},flow:[],mutations:[],fishObservations:[],cytoHits:[],manualAnc:null,manualAncDate:'',manualPlt:null,manualPltDate:''};
  o.date=date;o.diagnostic=diagnostic;o.blastAspirate=$('meAspirate').value===''?null:Number($('meAspirate').value);o.blastFlow=$('meFlow').value===''?null:Number($('meFlow').value);
  o.flowAdequate=$('meFlowAdeq').value==='Yes'?true:$('meFlowAdeq').value==='No'?false:null;o.preferredBlastManual=$('mePreferred').value===''?null:Number($('mePreferred').value);
  o.blastIhcLow=$('meIhcLow').value===''?null:Number($('meIhcLow').value);o.blastIhcHigh=$('meIhcHigh').value===''?o.blastIhcLow:Number($('meIhcHigh').value);
@@ -610,6 +695,13 @@ function problems(){
 
 function render(){
  autoRelapse();
+ D.marrows.forEach(m=>{
+   if(!Array.isArray(m.flow))m.flow=[];
+   if(!Array.isArray(m.mutations))m.mutations=[];
+   if(!Array.isArray(m.fishObservations))m.fishObservations=fishparse((m.raw?.fish||'')+' '+(m.raw?.cyto||''));
+   if(m.raw?.ngspos && m.mutations.some(x=>x.result==='Positive'&&!('protein' in x)))m.mutations=muts(m.raw.ngspos,m.raw.ngstest||'');
+   if(m.raw?.flow)m.flow=flowparse(m.raw.flow);
+ });
  D.cycles.forEach(c=>{
    if(c.hmaPlanned==null||c.hmaPlanned==='')c.hmaPlanned=hmaDefault(c.hma||'Azacitidine');
    if(c.hmaActual==null||c.hmaActual==='')c.hmaActual=c.hmaPlanned;
@@ -674,10 +766,14 @@ function render(){
      <tr><td>Platelets</td><td>${r.fp?.plt??'—'}</td><td>${r.fp?.date?displayDate(r.fp.date):'—'}</td><td>${r.fp?.manual?'manual override':'best eligible CBC'}</td></tr></table>${note}`;
    }
    return `<div class=card><h3>${displayDate(m.date)} ${m.diagnostic?'<span class="pill ok">Diagnostic</span>':''} <span class=pill>${dxday(m.date)}</span> ${c?`<span class=pill>C${c.n}D${dd(c.start,m.date)+1}</span>`:''}</h3>
-   <div class=row><div class=metric>Blasts<b>${blastText}</b><span class=small>${pb.source}</span></div><div class=metric>Calculated response<b>${resp}</b></div><div class=metric>Positive mutations<b>${m.mutations.filter(x=>x.result==='Positive'&&x.classification!=='VUS').length}</b></div></div>
+   <div class=row><div class=metric>Blasts<b>${blastText}</b><span class=small>${pb.source}</span></div><div class=metric>Calculated response<b>${resp}</b></div><div class=metric>Qualifying variants<b>${m.mutations.filter(x=>x.result==='Positive'&&x.classification!=='VUS').length}</b></div></div>
    <details><summary>Blast-source details</summary><table><tr><th>Source</th><th>Value</th></tr><tr><td>Flow</td><td>${m.blastFlow??'—'}${m.blastFlow!=null?'%':''} · ${m.flowAdequate===false?'not adequate/representative':'adequate/assumed adequate'}</td></tr><tr><td>Aspirate/manual differential</td><td>${m.blastAspirate??'—'}${m.blastAspirate!=null?'%':''}</td></tr><tr><td>Core/IHC</td><td>${m.blastIhcLow!=null?(m.blastIhcLow===m.blastIhcHigh?m.blastIhcLow:m.blastIhcLow+'–'+m.blastIhcHigh)+'%':'—'}</td></tr></table></details>
    ${responseBlock}
-   <details><summary>Parsed flow/genetics</summary><p>${m.flow.map(x=>`<span class="pill ${x.result==='Positive'?'flowpos':x.result==='Negative'?'flowneg':'neutral'}">${x.marker}: ${x.result}, ${x.modifier}</span>`).join(' ')}</p><p>${m.mutations.map(x=>`<span class="pill ${x.classification==='VUS'?'ngsvus':x.result==='Positive'?'ngspos':'ngsneg'}">${x.gene}: ${x.result}${x.vaf!=null?', VAF '+x.vaf+'%':''}${x.classification==='VUS'?' (VUS)':''}</span>`).join(' ')}</p></details>
+   <details><summary>Parsed flow/genetics</summary>
+   <p><b>Flow</b><br>${(m.flow||[]).map(x=>`<span class="pill ${x.result==='Positive'?'flowpos':x.result==='Negative'?'flowneg':'neutral'}">${flowDisplay(x)}</span>`).join(' ')||'<span class=small>No structured flow observations.</span>'}</p>
+   <p><b>NGS</b><br>${(m.mutations||[]).map(x=>`<span class="pill ${x.classification==='VUS'?'ngsvus':x.result==='Positive'?'ngspos':'ngsneg'}">${x.result==='Negative'?x.gene+' Negative':variantDisplay(x)}</span>`).join(' ')||'<span class=small>No structured NGS observations.</span>'}</p>
+   <p><b>FISH</b><br>${(m.fishObservations||fishparse((m.raw?.fish||'')+' '+(m.raw?.cyto||''))).map(x=>`<span class="pill ${x.result==='Positive'?'fishpos':'fishneg'}">${x.target} ${x.result}</span>`).join(' ')||'<span class=small>No structured FISH observations.</span>'}</p>
+   </details>
    <div class=actions>${!m.diagnostic?`<button class="btn alt" onclick="setManualCounts(${i})">Override counts</button>`:''}<button class="btn alt" onclick="editMarrow(${i})">Edit marrow</button><button class="btn danger" onclick="delMarrow(${i})">Delete marrow</button></div></div>`
  }).join(''):'<p class=help>No confirmed marrows yet.</p>';
 
@@ -717,11 +813,11 @@ function render(){
  ev.sort((a,b)=>a[0].localeCompare(b[0]));$('tl').innerHTML=ev.map(x=>`<div class=event><b>${displayDate(x[0])}</b><div>${x[1]}</div></div>`).join('')||'<p class=help>No dated events.</p>'
 }
 function dl(n,t,type='text/plain'){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type}));a.download=n;a.click()}
-function jsonOut(){dl((D.base.study||'AML-demo')+'_V2.4.json',JSON.stringify(D,null,2),'application/json')}
+function jsonOut(){dl((D.base.study||'AML-demo')+'_V2.5.json',JSON.stringify(D,null,2),'application/json')}
 function csv(rows){if(!rows.length)return'';let k=[...new Set(rows.flatMap(Object.keys))];return[k.join(','),...rows.map(r=>k.map(x=>`"${String(r[x]??'').replaceAll('"','""')}"`).join(','))].join('\n')}
 function csvOut(k){
  let r=k==='cycles'?D.cycles.map(x=>({study_id:D.base.study,...x})):
- k==='marrows'?D.marrows.map(x=>{let pb=preferredBlast(x),rw=responseWindow(x);return{study_id:D.base.study,marrow_id:x.id,date:x.date,diagnostic:x.diagnostic,blast_aspirate:x.blastAspirate,blast_flow:x.blastFlow,blast_ihc_low:x.blastIhcLow,blast_ihc_high:x.blastIhcHigh,preferred_blast:pb.value,preferred_blast_source:pb.source,cytogenetic_category:deriveCytogenetics(x).category,calculated_response:classifyResponse(x),response_window_mode:rw.mode,response_window_end:rw.end,cycle:cyc(x.date)?.n||''}}):
+ k==='marrows'?D.marrows.map(x=>{let pb=preferredBlast(x),rw=responseWindow(x);return{study_id:D.base.study,marrow_id:x.id,date:x.date,diagnostic:x.diagnostic,blast_aspirate:x.blastAspirate,blast_flow:x.blastFlow,blast_ihc_low:x.blastIhcLow,blast_ihc_high:x.blastIhcHigh,preferred_blast:pb.value,preferred_blast_source:pb.source,cytogenetic_category:deriveCytogenetics(x).category,ngs_variants_json:JSON.stringify((x.mutations||[]).filter(v=>v.result==='Positive')),fish_observations_json:JSON.stringify(x.fishObservations||fishparse((x.raw?.fish||'')+' '+(x.raw?.cyto||''))),calculated_response:classifyResponse(x),response_window_mode:rw.mode,response_window_end:rw.end,cycle:cyc(x.date)?.n||''}}):
  k==='cbc'?D.cbc.map(x=>({study_id:D.base.study,...x})):
  D.marrows.flatMap(m=>m.mutations.map(x=>({study_id:D.base.study,marrow_id:m.id,marrow_date:m.date,...x})));
  dl(k+'.csv',csv(r),'text/csv')
