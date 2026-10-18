@@ -1,25 +1,20 @@
-# AML HMA/VEN Longitudinal Tracker — V1 Prototype
+# AML AZA/VEN Tracker V2
 
-Static GitHub Pages prototype for designing a de-identified AML HMA/VEN longitudinal abstraction workflow.
+Source-first static prototype for longitudinal HMA/VEN AML abstraction.
+
+## Included
+- Quick Import landing page
+- CBCd trend paste and review-first extraction
+- Marrow package paste for morphology, flow, cytogenetics, FISH, NGS detected and NGS tested
+- Parsed immunophenotype and molecular observations
+- One diagnostic/baseline marrow feeding baseline disease biology
+- VEN start defaults to cycle day 1 but is editable
+- CBC observations mapped to each marrow's 14-day response-count window
+- Timeline, QA issues, completeness
+- JSON and relational CSV exports
+- localStorage demo persistence
 
 ## Important
-- Prototype/test use only.
-- Do **not** enter names, MRNs, DOBs, or other PHI.
-- Data are kept only in the current browser session unless exported.
-- This is not yet a shared database or production research system.
+FAKE / DE-IDENTIFIED TEST DATA ONLY. Do not enter PHI in this public/static prototype.
 
-## V1 features
-- Diagnosis date indexed as Study Day 0
-- Patient/baseline disease and molecular data
-- Unlimited HMA/VEN cycles
-- Derived cycle boundaries and durations
-- Independent marrow entry with automatic cycle/day assignment
-- Preliminary ELN 2022 response calculation
-- Count recovery dates indexed to diagnosis and cycle
-- Outcomes
-- Timeline and QA warnings
-- CSV exports for patients, cycles, marrows, and events
-- Full JSON export
-
-## GitHub Pages
-Upload `index.html` to the repository root. In repository Settings → Pages, choose **Deploy from a branch**, `main`, `/ (root)`, then Save.
+The text parsers and ELN classification code are prototype workflow demonstrations, not validated clinical/research algorithms. Formal validation is required before production use.
