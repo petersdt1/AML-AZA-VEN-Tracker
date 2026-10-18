@@ -423,16 +423,42 @@ function editCBC(i){
 function delCBC(i){if(confirm('Delete this CBC observation?')){D.cbc.splice(i,1);save()}}
 
 function extractBlastData(path,flow){
- let out={aspirate:null,flow:null,ihcLow:null,ihcHigh:null,flowAdequate:true};
- let m=path.match(/(?:aspirate|manual differential)[^.\n]{0,80}?(?:blasts?|blast count)[^0-9]{0,20}([0-9.]+)\s*%/i);
- if(!m)m=path.match(/(?:blasts?|blast count)[^0-9]{0,20}([0-9.]+)\s*%[^.\n]{0,50}(?:aspirate|manual differential)/i);
+ let out={aspirate:null,flow:null,ihcLow:null,ihcHigh:null,flowAdequate:true,flowPossibleUnparsed:false};
+
+ // Aspirate/manual differential: prose patterns.
+ let m=path.match(/(?:aspirate|manual differential)[^.\n]{0,100}?(?:blasts?|blast count)[^0-9]{0,20}([0-9.]+)\s*%/i);
+ if(!m)m=path.match(/(?:blasts?|blast count)[^0-9]{0,20}([0-9.]+)\s*%[^.\n]{0,80}(?:aspirate|manual differential)/i);
+
+ // Aspirate/manual differential: table-style layouts, e.g. "Blast %" followed by "3.5".
+ if(!m)m=path.match(/(?:Differential\s*:?\s*)[\s\S]{0,160}?\bBlast\s*%\s*[:\t ]*\r?\n+\s*([0-9.]+)/i);
+ if(!m)m=path.match(/\bBlast\s*%\s*[:\t ]*\r?\n+\s*([0-9.]+)(?=[\s\r\n])/i);
  if(m)out.aspirate=Number(m[1]);
- let fm=flow.match(/(?:blasts?|myeloid blasts)[^0-9]{0,30}([0-9.]+)\s*%/i);if(fm)out.flow=Number(fm[1]);
- let range=path.match(/(?:CD34|CD117|IHC|immunohistochem|blasts?)[^.\n]{0,60}?([0-9.]+)\s*[-–to]+\s*([0-9.]+)\s*%/i);
+
+ // Flow blast percentage: accept "blasts", "myeloid blasts", or "myeloblasts".
+ let flowPatterns=[
+   /(?:myeloblasts?|myeloid\s+blasts?|blasts?)[^0-9]{0,40}([0-9.]+)\s*%/i,
+   /(?:increased\s+)?aberrant\s+(?:myeloid\s+)?(?:blasts?|myeloblasts?)[^0-9]{0,40}([0-9.]+)\s*%/i
+ ];
+ let fm=null;
+ for(let re of flowPatterns){fm=String(flow||'').match(re);if(fm)break}
+
+ // Pathology report may quote the flow result even if the separate flow field lacks the blast percentage.
+ if(!fm){
+   fm=path.match(/flow\s+cytometry[^.\n]{0,140}?(?:myeloblasts?|myeloid\s+blasts?|blasts?)[^0-9]{0,40}([0-9.]+)\s*%/i);
+ }
+ if(fm)out.flow=Number(fm[1]);
+
+ // QA safeguard: source mentions a flow blast population but no number was captured.
+ if(out.flow==null && /flow\s+cytometry[^.\n]{0,160}?(?:myeloblasts?|myeloid\s+blasts?|blasts?)/i.test(path)){
+   out.flowPossibleUnparsed=true;
+ }
+
+ // Core/IHC blast estimate, including ranges.
+ let range=path.match(/(?:CD34|CD117|IHC|immunohistochem|blasts?)[^.\n]{0,80}?([0-9.]+)\s*(?:-|–|to)\s*([0-9.]+)\s*%/i);
  if(range){out.ihcLow=Number(range[1]);out.ihcHigh=Number(range[2])}
- else {
-  let im=path.match(/(?:CD34|CD117|IHC|immunohistochem)[^.\n]{0,60}?([0-9.]+)\s*%/i);
-  if(im){out.ihcLow=out.ihcHigh=Number(im[1])}
+ else{
+   let im=path.match(/(?:CD34|CD117|IHC|immunohistochem)[^.\n]{0,80}?([0-9.]+)\s*%/i);
+   if(im){out.ihcLow=out.ihcHigh=Number(im[1])}
  }
  return out
 }
@@ -601,7 +627,7 @@ function extractBM(){
  let bmDate=normalizeDateText($('bmdate').value,'Marrow date');if(bmDate===null)return;
  let path=$('path').value,bd=extractBlastData(path,$('flow').value),qm=quickMRDData();
  let o={id:'BM'+Date.now(),date:bmDate,diagnostic:$('diag').checked,
- blastAspirate:bd.aspirate,blastFlow:bd.flow,blastIhcLow:bd.ihcLow,blastIhcHigh:bd.ihcHigh,flowAdequate:true,preferredBlastManual:null,
+ blastAspirate:bd.aspirate,blastFlow:bd.flow,blastIhcLow:bd.ihcLow,blastIhcHigh:bd.ihcHigh,flowAdequate:true,flowPossibleUnparsed:bd.flowPossibleUnparsed,preferredBlastManual:null,
  pb:'Absent',emd:'Absent/resolved',mrd:qm.mrd,mrdAssessed:qm.mrdAssessed,mrdMethods:qm.mrdMethods,mrdTarget:qm.mrdTarget,mrdOther:qm.mrdOther,
  raw:{path,flow:$('flow').value,cyto:$('cyto').value,fish:$('fish').value,ngspos:$('ngspos').value,ngstest:$('ngstest').value},
  flow:flowparse($('flow').value),mutations:muts($('ngspos').value,$('ngstest').value),fishObservations:fishparse($('fish').value+' '+$('cyto').value),
@@ -613,6 +639,7 @@ function extractBM(){
  $('bmstage').innerHTML=`<div class=stage><b>Extraction staging area</b><p>${displayDate(o.date)} · ${o.diagnostic?'Diagnostic marrow':'Follow-up marrow'} · ${c?'C'+c.n+'D'+(dd(c.start,o.date)+1):'not assigned to treatment cycle'}</p>
  <p>Aspirate blasts: <b>${o.blastAspirate??'not extracted'}</b> · Flow blasts: <b>${o.blastFlow??'not extracted'}</b> · IHC/core: <b>${o.blastIhcLow!=null?(o.blastIhcLow===o.blastIhcHigh?o.blastIhcLow:o.blastIhcLow+'–'+o.blastIhcHigh)+'%':'not extracted'}</b></p>
  <p>Preferred blast value: <b>${pb.value!=null?pb.value+'%':'needs review'}</b> <span class=small>${pb.source}</span></p>
+ ${o.flowPossibleUnparsed?'<div class="warnbox"><b>QA:</b> Possible flow blast percentage found in source text but not parsed. Review before confirming.</div>':''}
  <p>Blast phenotype markers: <b>${o.flow.length}</b> · Detected NGS variants: <b>${o.mutations.filter(x=>x.result==='Positive').length}</b> · Tested/not-detected genes: <b>${o.mutations.filter(x=>x.result==='Negative').length}</b> · FISH observations: <b>${o.fishObservations.length}</b></p>
  <p><b>Blast immunophenotype</b><br>${o.flow.map(x=>`<span class="pill ${x.result==='Positive'?'flowpos':x.result==='Negative'?'flowneg':'neutral'}">${flowDisplay(x)}</span>`).join(' ')||'<span class="pill warn">Blast immunophenotype not confidently extracted</span>'}</p>
  <p><b>NGS</b><br>${o.mutations.map(x=>`<span class="pill ${x.classification==='VUS'?'ngsvus':x.result==='Positive'?'ngspos':'ngsneg'}">${x.result==='Negative'?x.gene+' Negative':variantDisplay(x)}</span>`).join(' ')||'<span class=small>No structured NGS observations extracted.</span>'}</p>

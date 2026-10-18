@@ -42,3 +42,9 @@ FAKE / DE-IDENTIFIED TEST DATA ONLY. This static GitHub prototype is not an appr
 - FISH observations are individually retainable/editable with result status.
 - MRD is now housed inside Structured data review; it remains hidden/not applicable for diagnostic marrows.
 - The checkbox in Flow/NGS/Cytogenetics/FISH means **keep this observation**, not positive/negative. Result status is stored separately.
+
+## Blast-percentage parser patch
+- Flow blast extraction recognizes `myeloblasts` in addition to `blasts` and `myeloid blasts`.
+- Pathology text such as `Flow cytometry reports increased aberrant myeloblasts, 30%` now supplies the structured flow blast percentage.
+- Aspirate differential tables with `Blast %` on one line and the numeric value on the next line are now parsed.
+- If flow-blast wording is found but the percentage still fails extraction, Quick Import shows a QA warning rather than silently falling back.
