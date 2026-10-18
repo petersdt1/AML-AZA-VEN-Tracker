@@ -1,4 +1,4 @@
-# AML AZA/VEN Tracker V2.8
+# AML AZA/VEN Tracker V2.9
 
 V2.7 narrows flow extraction to the AML blast phenotype, adds conditional MRD entry to Quick Import, and adds a compact conventional-cytogenetics preview with granular export.
 
@@ -58,3 +58,25 @@ FAKE / DE-IDENTIFIED TEST DATA ONLY. This static GitHub prototype is not an appr
 - FISH shows the original FISH report text.
 - MRD shows stored MRD target/result or method note when available.
 - The raw source stays collapsed by default so the editor remains compact, but coordinators can copy missed abnormalities directly into `+ Add marker`, `+ Add variant`, `+ Add abnormality`, or `+ Add FISH result`.
+
+
+## V2.9 parser / QA release
+V2.9 intentionally freezes the V2.8 UI and changes parser/data-quality logic only.
+
+- Bone-marrow differential tables such as `Blast %    3.5` are parsed as aspirate blasts while remaining scoped away from peripheral-blood blast rows.
+- Flow phenotype modifiers are scoped to the marker phrase they actually modify.
+- FISH extraction is line-based and conservative; explicit assay lines are primary and summary positives only fill findings not already represented.
+- FISH parsing no longer concatenates conventional cytogenetic text.
+- `cytoHits` is now derived only from structured present conventional-cytogenetic observations and structured positive FISH observations. Negative FISH text cannot create a positive hit.
+- WHO/ICC AML-MR conventional-cytogenetic preview now evaluates parsed present conventional abnormalities instead of raw-string substring matches.
+- Existing V2.8 tabs, editors, raw-source review, MRD, CBC, treatment, outcomes, timeline, and export UI are regression-checked during this build.
+
+## V2.9 marrow-card / editor refinement
+- The V2.9 parser fixes remain unchanged.
+- In Edit Marrow, blast-source values now live as the first subsection under Structured data review, alongside Flow, NGS, cytogenetics, FISH, and MRD.
+- The Blast assessment subsection includes the raw pathology source and a live preferred-blast calculation preview.
+- Bone-marrow cards now use two executive-summary rows:
+  1. Blasts + Genomic / cytogenetic summary
+  2. Calculated response + MRD (MRD omitted for diagnostic marrows)
+- The biology summary is positive-only and compact; the complete parsed Flow/NGS/FISH details remain available below.
+- No V2.8 element IDs were removed.
