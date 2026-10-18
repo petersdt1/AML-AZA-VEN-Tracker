@@ -1,82 +1,418 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AML AZA/VEN Tracker V2</title>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AML AZA/VEN Tracker V2.1</title>
 <style>
-:root{--b:#f5f7fb;--c:#fff;--i:#172033;--m:#667085;--l:#dde3ec;--a:#2458c6;--g:#16794b;--w:#986400}
-*{box-sizing:border-box}body{margin:0;background:var(--b);color:var(--i);font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif}
-header{background:#12203a;color:#fff;padding:18px 22px;position:sticky;top:0;z-index:5}header h1{font-size:20px;margin:0}.demo{padding:9px 20px;background:#fff3cd;color:#6d5200;font-size:12px}
-.wrap{max-width:1250px;margin:auto;padding:18px}.layout{display:grid;grid-template-columns:215px 1fr;gap:18px}
-nav,.card{background:var(--c);border:1px solid var(--l);border-radius:12px}.card{padding:18px;margin-bottom:14px}nav{padding:9px;height:max-content;position:sticky;top:90px}
-nav button{display:block;width:100%;border:0;background:transparent;text-align:left;padding:10px;border-radius:8px;cursor:pointer}nav button.on{background:#edf3ff;color:var(--a);font-weight:700}
-section{display:none}section.on{display:block}h2{margin:0 0 5px}h3{margin:0 0 10px;font-size:16px}.help,.small{color:var(--m);font-size:12px}.source{background:#f8faff;border-style:dashed}
-.row{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.two{grid-template-columns:repeat(2,1fr)}label{display:block;font-size:12px;font-weight:650;margin:8px 0 4px}
-input,select,textarea{width:100%;border:1px solid #cbd4e0;border-radius:8px;padding:9px;font:inherit;font-size:13px}textarea{min-height:105px;resize:vertical}.big{min-height:170px}
-.btn{border:0;background:var(--a);color:#fff;border-radius:8px;padding:9px 13px;font-weight:650;cursor:pointer}.alt{background:#fff;color:var(--a);border:1px solid #a9bae3}
-.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.metric{border:1px solid var(--l);border-radius:9px;padding:11px;background:#fafbfd}.metric b{display:block;font-size:18px;margin-top:3px}
-.pill{display:inline-block;padding:3px 7px;border-radius:999px;background:#eef1f5;font-size:11px;margin:2px}.ok{background:#e8f6ee;color:var(--g)}.warn{background:#fff3d8;color:var(--w)}
-.stage{margin-top:12px;padding:12px;background:#fff9e8;border-left:4px solid #e3a11b;border-radius:6px}.good{margin-top:12px;padding:12px;background:#edf8f2;border-left:4px solid var(--g);border-radius:6px}
-table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px;border-bottom:1px solid var(--l);text-align:left}.timeline{border-left:3px solid #bac5d8;padding-left:18px;margin-left:8px}.event{margin:14px 0}
+:root{
+  --bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#667085;--line:#dde3ec;
+  --accent:#2458c6;--accent-soft:#edf3ff;--ok:#16794b;--ok-bg:#edf8f2;
+  --warn:#986400;--warn-bg:#fff8e8;--bad:#b3261e;--bad-bg:#fff0ee
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{background:#12203a;color:#fff;padding:17px 22px;position:sticky;top:0;z-index:10}
+header h1{margin:0;font-size:20px}.sub{font-size:12px;color:#cbd5e1;margin-top:3px}
+.demo{padding:9px 20px;background:#fff3cd;color:#6d5200;font-size:12px;border-bottom:1px solid #ead89d}
+.wrap{max-width:1260px;margin:auto;padding:18px}.layout{display:grid;grid-template-columns:220px 1fr;gap:18px}
+nav,.card{background:var(--card);border:1px solid var(--line);border-radius:12px}
+nav{padding:9px;height:max-content;position:sticky;top:93px}
+nav button{display:block;width:100%;border:0;background:transparent;text-align:left;padding:10px;border-radius:8px;cursor:pointer;font-size:14px}
+nav button.on{background:var(--accent-soft);color:var(--accent);font-weight:700}
+section{display:none}section.on{display:block}.card{padding:18px;margin-bottom:14px}
+h2{margin:0 0 5px;font-size:22px}h3{margin:0 0 10px;font-size:16px}h4{margin:14px 0 7px}
+.help,.small{color:var(--muted);font-size:12px;line-height:1.45}.source{background:#f8faff;border-style:dashed}
+.row{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.two{grid-template-columns:repeat(2,1fr)}
+label{display:block;font-size:12px;font-weight:650;margin:8px 0 4px}
+input,select,textarea{width:100%;border:1px solid #cbd4e0;border-radius:8px;padding:9px;font:inherit;font-size:13px;background:#fff}
+textarea{min-height:105px;resize:vertical}.big{min-height:175px}
+.btn{border:0;background:var(--accent);color:#fff;border-radius:8px;padding:9px 13px;font-weight:650;cursor:pointer}
+.alt{background:#fff;color:var(--accent);border:1px solid #a9bae3}.danger{background:#fff;color:var(--bad);border:1px solid #e7aaa6}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.metric{border:1px solid var(--line);border-radius:9px;padding:11px;background:#fafbfd}.metric b{display:block;font-size:18px;margin-top:3px}
+.pill{display:inline-block;padding:3px 7px;border-radius:999px;background:#eef1f5;font-size:11px;margin:2px}.pill.ok{background:#e8f6ee;color:var(--ok)}.pill.warn{background:#fff3d8;color:var(--warn)}
+.stage{margin-top:12px;padding:12px;background:var(--warn-bg);border-left:4px solid #e3a11b;border-radius:6px}.good{margin-top:12px;padding:12px;background:var(--ok-bg);border-left:4px solid var(--ok);border-radius:6px}.badbox{margin-top:12px;padding:12px;background:var(--bad-bg);border-left:4px solid var(--bad);border-radius:6px}
+table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{color:#596579}
+.timeline{border-left:3px solid #bac5d8;padding-left:18px;margin-left:8px}.event{margin:14px 0}
+details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.inline-check{display:flex;gap:8px;align-items:center}.inline-check input{width:auto}
 @media(max-width:800px){.layout{grid-template-columns:1fr}nav{position:static;display:flex;overflow:auto}nav button{min-width:max-content}.row,.two{grid-template-columns:1fr}}
-</style></head><body>
-<header><h1>AML AZA/VEN Longitudinal Tracker V2</h1><div class="small" id="hdr" style="color:#cbd5e1">No patient selected</div></header>
+</style>
+</head>
+<body>
+<header><h1>AML AZA/VEN Longitudinal Tracker V2.1</h1><div class="sub" id="hdr">No patient selected</div></header>
 <div class="demo"><b>DEMO / FAKE DATA ONLY.</b> Static GitHub prototype. Do not enter names, MRNs, DOBs, or PHI.</div>
-<div class="wrap"><div class="layout"><nav>
-<button class="on" data-t="quick">Quick Import</button><button data-t="base">Baseline</button><button data-t="cycles">Treatment Cycles</button><button data-t="marrows">Bone Marrows</button><button data-t="cbc">CBC Trend</button><button data-t="out">Outcomes</button><button data-t="qa">Timeline / QA</button><button data-t="export">Export</button>
-</nav><main>
-<section id="quick" class="on"><div class="card"><h2>Source-first abstraction</h2><p class="help">Paste source material first, review what was extracted, then confirm. Manual entry remains available when outside records are incomplete.</p>
-<div class="row"><div class="metric">Study ID<b id="mID">—</b></div><div class="metric">Completeness<b id="mComp">0%</b></div><div class="metric">Data issues<b id="mIssues">0</b></div></div></div>
-<div class="card source"><h3>⇩ CBC with differential trend</h3><textarea id="qcbc" class="big" placeholder="Paste dated CBC/differential trend"></textarea><div class="tools"><button class="btn" onclick="parseCBC('qcbc')">Extract CBC data</button><button class="btn alt" onclick="fakeCBC('qcbc')">Load fake example</button></div><div id="cbcstage"></div></div>
-<div class="card source"><h3>⇩ Marrow source package</h3><div class="row two"><div><label>Marrow date</label><input type="date" id="bmdate"></div><div><label><input type="checkbox" id="diag" style="width:auto"> Diagnostic / baseline marrow</label></div></div>
+<div class="wrap"><div class="layout">
+<nav>
+<button class="on" data-t="quick">Quick Import</button>
+<button data-t="base">Baseline</button>
+<button data-t="cycles">Treatment Cycles</button>
+<button data-t="marrows">Bone Marrows</button>
+<button data-t="cbc">CBC Trend</button>
+<button data-t="out">Outcomes</button>
+<button data-t="qa">Timeline / QA</button>
+<button data-t="export">Export</button>
+</nav>
+<main>
+
+<section id="quick" class="on">
+<div class="card">
+<h2>Source-first abstraction</h2>
+<p class="help">Paste source material first, review what was extracted, then confirm. Manual entry remains available throughout.</p>
+<div class="row">
+<div class="metric">Study ID<b id="mID">—</b></div>
+<div class="metric">Completeness<b id="mComp">0%</b></div>
+<div class="metric">Data issues<b id="mIssues">0</b></div>
+</div>
+</div>
+
+<div class="card source">
+<h3>⇩ CBC with differential trend</h3>
+<p class="help">V2.1 supports Epic-style blocks where a timestamp appears on one line and platelet/ANC values appear on following lines. Full date + time are preserved.</p>
+<textarea id="qcbc" class="big" placeholder="Paste Epic CBC/differential trend here"></textarea>
+<div class="tools"><button class="btn" onclick="parseCBC('qcbc')">Extract CBC data</button><button class="btn alt" onclick="fakeCBC('qcbc')">Load fake example</button></div>
+<div id="cbcstage"></div>
+</div>
+
+<div class="card source">
+<h3>⇩ Marrow source package</h3>
+<div class="row two">
+<div><label>Marrow date</label><input type="date" id="bmdate"></div>
+<div class="inline-check"><input type="checkbox" id="diag"><label for="diag" style="margin:0">Diagnostic / baseline marrow</label></div>
+</div>
 <label>Pathology / morphology</label><textarea id="path" placeholder="Paste marrow pathology / morphology"></textarea>
 <label>Flow cytometry</label><textarea id="flow" placeholder="Paste raw flow report"></textarea>
 <div class="row two"><div><label>Cytogenetics</label><textarea id="cyto" placeholder="Paste karyotype / cytogenetics"></textarea></div><div><label>FISH</label><textarea id="fish" placeholder="Paste FISH report"></textarea></div></div>
 <div class="row two"><div><label>NGS: mutations detected</label><textarea id="ngspos"></textarea></div><div><label>NGS: genes tested</label><textarea id="ngstest" placeholder="Paste gene list or leave unknown"></textarea></div></div>
-<div class="tools"><button class="btn" onclick="extractBM()">Extract marrow data</button><button class="btn alt" onclick="fakeBM()">Load fake example</button></div><div id="bmstage"></div></div></section>
+<div class="tools"><button class="btn" onclick="extractBM()">Extract marrow data</button><button class="btn alt" onclick="fakeBM()">Load fake example</button></div>
+<div id="bmstage"></div>
+</div>
+</section>
 
-<section id="base"><div class="card"><h2>Baseline</h2><p class="help">Patient-level history only. Baseline disease biology comes from the marrow marked diagnostic.</p>
-<div class="row"><div><label>Study ID</label><input id="study" oninput="baseSave()"></div><div><label>AML diagnosis date (Day 0)</label><input type="date" id="dx" onchange="baseSave()"></div><div><label>Age at diagnosis</label><input type="number" id="age" onchange="baseSave()"></div></div>
-<div class="row"><div><label>AML ontogeny</label><select id="onto" onchange="baseSave()"><option></option><option>De novo</option><option>AML following MDS</option><option>AML following MDS/MPN</option><option>AML following MPN</option><option>Therapy-related AML</option><option>Other secondary AML</option><option>Unknown</option></select></div><div><label>Prior HMA</label><select id="phma" onchange="baseSave()"><option></option><option>No</option><option>Yes</option><option>Unknown</option></select></div><div><label>Prior HMA cycles</label><input type="number" id="phmac" onchange="baseSave()"></div></div>
-<label>Transplant intent at HMA/VEN start</label><select id="intent" onchange="baseSave()"><option></option><option>Yes</option><option>No</option><option>Uncertain</option><option>Unknown</option></select></div>
-<div class="card"><h3>Calculated diagnostic classification</h3><div class="row"><div class="metric">Baseline blasts<b id="bb">—</b></div><div class="metric">ELN 2022<b id="e22">Pending</b><span class="small" id="e22w"></span></div><div class="metric">ELN 2024 Less-Intensive<b id="e24">Pending</b><span class="small" id="e24w"></span></div></div><p class="help">The ELN logic here is a prototype placeholder for workflow testing and requires formal primary-source validation before research use.</p></div></section>
+<section id="base">
+<div class="card"><h2>Baseline</h2><p class="help">Patient-level history only. Baseline disease biology comes from the marrow marked diagnostic.</p>
+<div class="row">
+<div><label>Study ID</label><input id="study" oninput="baseSave()"></div>
+<div><label>AML diagnosis date (Day 0)</label><input type="date" id="dx" onchange="baseSave()"></div>
+<div><label>Age at diagnosis</label><input type="number" id="age" min="18" max="120" onchange="baseSave()"></div>
+</div>
+<div class="row">
+<div><label>AML ontogeny</label><select id="onto" onchange="baseSave()"><option></option><option>De novo</option><option>AML following MDS</option><option>AML following MDS/MPN</option><option>AML following MPN</option><option>Therapy-related AML</option><option>Other secondary AML</option><option>Unknown</option></select></div>
+<div><label>Prior HMA</label><select id="phma" onchange="baseSave()"><option></option><option>No</option><option>Yes</option><option>Unknown</option></select></div>
+<div><label>Prior HMA cycles</label><input type="number" id="phmac" min="0" onchange="baseSave()"></div>
+</div>
+<label>Transplant intent at HMA/VEN start</label><select id="intent" onchange="baseSave()"><option></option><option>Yes</option><option>No</option><option>Uncertain</option><option>Unknown</option></select>
+</div>
+<div class="card"><h3>Calculated diagnostic classification</h3>
+<div class="row"><div class="metric">Baseline blasts<b id="bb">—</b></div><div class="metric">ELN 2022<b id="e22">Pending</b><span class="small" id="e22w"></span></div><div class="metric">ELN 2024 Less-Intensive<b id="e24">Pending</b><span class="small" id="e24w"></span></div></div>
+<p class="help">The ELN risk logic remains a prototype workflow implementation and must be formally validated before production research use.</p>
+</div>
+</section>
 
-<section id="cycles"><div class="card"><h2>Treatment Cycles</h2><p class="help">VEN start automatically defaults to the cycle start date but remains editable.</p><div id="clist"></div><button class="btn" onclick="addCycle()">+ Add cycle</button></div></section>
-<section id="marrows"><div class="card"><h2>Bone Marrows</h2><div id="bmlist"></div></div></section>
-<section id="cbc"><div class="card source"><h2>CBC Trend</h2><textarea id="cbcpaste" class="big"></textarea><div class="tools"><button class="btn" onclick="parseCBC('cbcpaste')">Extract CBC data</button><button class="btn alt" onclick="fakeCBC('cbcpaste')">Load fake example</button></div></div><div class="card"><h3>Confirmed observations</h3><div id="cbctable"></div></div></section>
-<section id="out"><div class="card"><h2>Outcomes</h2><div class="row"><div><label>AlloHSCT</label><select id="hsct" onchange="outSave()"><option></option><option>No</option><option>Yes</option></select></div><div><label>AlloHSCT date</label><input type="date" id="hsctd" onchange="outSave()"></div><div><label>Relapse/progression</label><select id="rel" onchange="outSave()"><option></option><option>No</option><option>Yes</option></select></div></div><div class="row"><div><label>Relapse date</label><input type="date" id="reld" onchange="outSave()"></div><div><label>Vital status</label><select id="vital" onchange="outSave()"><option></option><option>Alive</option><option>Dead</option><option>Unknown</option></select></div><div><label>Death date</label><input type="date" id="death" onchange="outSave()"></div></div><label>Subsequent AML therapy</label><input id="nexttx" onchange="outSave()"></div></section>
-<section id="qa"><div class="card"><h2>Data Issues</h2><div id="issues"></div></div><div class="card"><h2>Patient Timeline</h2><div class="timeline" id="tl"></div></div></section>
-<section id="export"><div class="card"><h2>Export</h2><p class="help">Demo data are stored only in this browser. Export provides portable JSON and relational CSV tables.</p><div class="tools"><button class="btn" onclick="jsonOut()">Full JSON</button><button class="btn alt" onclick="csvOut('cycles')">Cycles CSV</button><button class="btn alt" onclick="csvOut('marrows')">Marrows CSV</button><button class="btn alt" onclick="csvOut('cbc')">CBC CSV</button><button class="btn alt" onclick="csvOut('mutations')">Mutations CSV</button><button class="btn alt" onclick="resetAll()">Reset demo</button></div></div></section>
+<section id="cycles">
+<div class="card"><h2>Treatment Cycles</h2><p class="help">Cycle start dates define boundaries. VEN start defaults to Cycle Day 1 and can be manually changed.</p><div id="clist"></div><button class="btn" onclick="addCycle()">+ Add cycle</button></div>
+</section>
+
+<section id="marrows">
+<div class="card"><h2>Bone Marrows</h2><p class="help">Use Quick Import when original reports are available, or add/edit marrows manually.</p>
+<div class="tools"><button class="btn" onclick="manualMarrow()">+ Add marrow manually</button></div><div id="bmlist" style="margin-top:12px"></div></div>
+</section>
+
+<section id="cbc">
+<div class="card source"><h2>CBC Trend</h2><textarea id="cbcpaste" class="big" placeholder="Paste Epic CBC trend"></textarea><div class="tools"><button class="btn" onclick="parseCBC('cbcpaste')">Extract CBC data</button><button class="btn alt" onclick="fakeCBC('cbcpaste')">Load fake example</button><button class="btn alt" onclick="manualCBC()">+ Add CBC manually</button></div></div>
+<div class="card"><h3>Confirmed observations</h3><div id="cbctable"></div></div>
+</section>
+
+<section id="out">
+<div class="card"><h2>Outcomes</h2>
+<div class="row">
+<div><label>AlloHSCT</label><select id="hsct" onchange="outSave()"><option></option><option>No</option><option>Yes</option></select></div>
+<div><label>AlloHSCT date</label><input type="date" id="hsctd" onchange="outSave()"></div>
+<div><label>Relapse/progression</label><select id="rel" onchange="outSave()"><option></option><option>No</option><option>Yes</option></select></div>
+</div>
+<div class="row">
+<div><label>Relapse date (final)</label><input type="date" id="reld" onchange="outSave(true)"><span class="small" id="relbasis"></span></div>
+<div><label>Relapse basis</label><select id="relbase" onchange="outSave(true)"><option></option><option>Auto: marrow</option><option>Peripheral blood</option><option>Extramedullary disease</option><option>Clinical adjudication</option><option>Other</option></select></div>
+<div><label>Vital status</label><select id="vital" onchange="outSave()"><option></option><option>Alive</option><option>Dead</option><option>Unknown</option></select></div>
+</div>
+<div class="row">
+<div><label>Death date</label><input type="date" id="death" onchange="outSave()"></div>
+<div><label>Last known alive date</label><input type="date" id="lastalive" onchange="outSave()"></div>
+<div><label>Subsequent AML therapy</label><input id="nexttx" onchange="outSave()"></div>
+</div>
+<div id="relAutoBox"></div>
+</div>
+</section>
+
+<section id="qa">
+<div class="card"><h2>Data Issues</h2><div id="issues"></div></div>
+<div class="card"><h2>Patient Timeline</h2><div class="timeline" id="tl"></div></div>
+</section>
+
+<section id="export">
+<div class="card"><h2>Export</h2><p class="help">Demo data are stored only in this browser. Export provides portable JSON and relational CSV tables.</p>
+<div class="tools"><button class="btn" onclick="jsonOut()">Full JSON</button><button class="btn alt" onclick="csvOut('cycles')">Cycles CSV</button><button class="btn alt" onclick="csvOut('marrows')">Marrows CSV</button><button class="btn alt" onclick="csvOut('cbc')">CBC CSV</button><button class="btn alt" onclick="csvOut('mutations')">Mutations CSV</button><button class="btn danger" onclick="resetAll()">Reset demo</button></div>
+</div>
+</section>
+
 </main></div></div>
+
 <script>
-const K='AML_AV_V2';let D=JSON.parse(localStorage.getItem(K)||'null')||{base:{},cycles:[],marrows:[],cbc:[],out:{}},$=x=>document.getElementById(x);
-const dt=x=>x?new Date(x+'T12:00:00'):null,dd=(a,b)=>a&&b?Math.round((dt(b)-dt(a))/86400000):null,dxday=d=>D.base.dx?`Dx+${dd(D.base.dx,d)}`:'';
+const K='AML_AV_V21';
+let D=JSON.parse(localStorage.getItem(K)||'null')||{base:{},cycles:[],marrows:[],cbc:[],out:{relapse_date_auto:'',relapse_date_final:'',relapse_basis:'',relapse_overridden:false},audit:[]};
+const $=x=>document.getElementById(x);
+const dt=x=>x?new Date(x.length>10?x:x+'T12:00:00'):null;
+const dd=(a,b)=>a&&b?Math.round((dt(b)-dt(a))/86400000):null;
+const dxday=d=>D.base.dx?`Dx+${dd(D.base.dx,d.slice(0,10))}`:'';
+
 function save(){localStorage.setItem(K,JSON.stringify(D));render()}
+function log(action,detail){D.audit.push({ts:new Date().toISOString(),action,detail})}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));document.querySelectorAll('section').forEach(x=>x.classList.remove('on'));b.classList.add('on');$(b.dataset.t).classList.add('on');render()})
-function baseSave(){[['study','study'],['dx','dx'],['age','age'],['onto','onto'],['phma','phma'],['phmac','phmac'],['intent','intent']].forEach(([i,k])=>D.base[k]=$(i).value);save()}
-function outSave(){[['hsct','hsct'],['hsctd','hsctd'],['rel','rel'],['reld','reld'],['vital','vital'],['death','death'],['nexttx','nexttx']].forEach(([i,k])=>D.out[k]=$(i).value);save()}
-function addCycle(){let p=D.cycles.at(-1)||{};D.cycles.push({n:D.cycles.length+1,start:'',hma:p.hma||'Azacitidine',hmap:p.hmap||7,hmaa:'',vs:'',vp:p.vp||28,ve:'',g:''});save()}
+
+function baseSave(){
+ [['study','study'],['dx','dx'],['age','age'],['onto','onto'],['phma','phma'],['phmac','phmac'],['intent','intent']].forEach(([i,k])=>D.base[k]=$(i).value);
+ save()
+}
+function outSave(manualRel=false){
+ [['hsct','hsct'],['hsctd','hsctd'],['rel','rel'],['vital','vital'],['death','death'],['lastalive','lastalive'],['nexttx','nexttx']].forEach(([i,k])=>D.out[k]=$(i).value);
+ D.out.relapse_date_final=$('reld').value; D.out.relapse_basis=$('relbase').value;
+ if(manualRel && D.out.relapse_date_final) D.out.relapse_overridden = D.out.relapse_date_final !== D.out.relapse_date_auto || D.out.relapse_basis!=='Auto: marrow';
+ save()
+}
+
+function addCycle(){
+ let p=D.cycles.at(-1)||{};
+ D.cycles.push({id:'C'+Date.now(),n:D.cycles.length+1,start:'',hma:p.hma||'Azacitidine',hmap:p.hmap||7,hmaa:'',vs:'',vp:p.vp||28,ve:'',g:''});
+ save()
+}
 function uc(i,k,v){D.cycles[i][k]=v;if(k==='start'&&!D.cycles[i].vs)D.cycles[i].vs=v;save()}
-function cyc(d){let a=D.cycles.filter(x=>x.start).sort((x,y)=>x.start.localeCompare(y.start)),h=null;a.forEach((c,i)=>{if(d>=c.start&&(!a[i+1]||d<a[i+1].start))h=c});return h}
-function pdate(s){let m=s.match(/\b(\d{1,2})[\/-](\d{1,2})[\/-](20\d{2})\b/);return m?`${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`:''}
-function val(line,k){let m=new RegExp(k+'\\s*[:=]?\\s*([0-9.]+)','i').exec(line);return m?+m[1]:null}
-function parseCBC(id){let r=[];$(id).value.split(/\n/).forEach(l=>{let date=pdate(l);if(!date)return;let x={date,wbc:val(l,'WBC'),anc:val(l,'ANC'),hgb:val(l,'(?:HGB|Hemoglobin)'),plt:val(l,'(?:PLT|Platelets?)'),source:'raw report extraction'};if([x.wbc,x.anc,x.hgb,x.plt].some(v=>v!=null))r.push(x)});$('cbcstage').innerHTML=r.length?`<div class=stage><b>${r.length} observations recognized.</b> Review-first staging is active.<div class=tools><button class=btn onclick='confirmCBC(${JSON.stringify(JSON.stringify(r))})'>Confirm import</button></div></div>`:`<div class=stage>No dated CBC rows recognized. Manual entry/future parser refinement remains available.</div>`}
-function confirmCBC(s){let r=JSON.parse(s),m=new Map(D.cbc.map(x=>[x.date,x]));r.forEach(x=>m.set(x.date,{...(m.get(x.date)||{}),...x}));D.cbc=[...m.values()].sort((a,b)=>a.date.localeCompare(b.date));save();$('cbcstage').innerHTML='<div class=good>CBC observations confirmed.</div>'}
-function fakeCBC(id){$(id).value='01/05/2026 WBC 2.4 ANC 0.42 Hgb 8.7 PLT 31\\n01/12/2026 WBC 1.8 ANC 0.30 Hgb 8.2 PLT 24\\n01/28/2026 WBC 2.1 ANC 0.58 Hgb 8.9 PLT 46\\n02/02/2026 WBC 2.8 ANC 0.91 Hgb 9.1 PLT 63\\n02/07/2026 WBC 3.4 ANC 1.16 Hgb 9.4 PLT 104'}
-function muts(raw,tested){let known=['NPM1','FLT3','IDH1','IDH2','TP53','NRAS','KRAS','DDX41','CEBPA','RUNX1','ASXL1','SRSF2','SF3B1','U2AF1','ZRSR2','BCOR','STAG2','EZH2','ETV6'];let a=[];known.forEach(g=>{if(new RegExp('\\b'+g+'\\b','i').test(raw)){let m=new RegExp(g+'[^\\n]*?(?:VAF[^0-9]*)?([0-9.]+)\\s*%','i').exec(raw);a.push({gene:g,result:'Positive',vaf:m?+m[1]:null,source:'raw extraction'})}else if(new RegExp('\\b'+g+'\\b','i').test(tested))a.push({gene:g,result:'Negative',vaf:null,source:'tested list + not detected'})});return a}
-function flowparse(s){let a=[],re=/\b((?:cy)?CD\d{1,3}|HLA-DR|MPO|TdT)\b([^.;\n]*)/gi,m;while((m=re.exec(s))){let t=m[2],res=/negative|not express/i.test(t)?'Negative':/express|positive/i.test(t)?'Positive':'Reported',mod=(t.match(/\b(bright|dim|partial|variable|heterogeneous|aberrant|moderate)\b/gi)||[]).join(', ');a.push({marker:m[1],result:res,modifier:mod||'Not stated'})}return a}
-function extractBM(){if(!$('bmdate').value){$('bmstage').innerHTML='<div class=stage>Enter a marrow date.</div>';return}let p=$('path').value,bl=(p.match(/(?:blasts?|blast count)[^0-9]{0,20}([0-9.]+)\s*%/i)||[])[1]||'',o={id:'BM'+Date.now(),date:$('bmdate').value,diagnostic:$('diag').checked,blasts:bl,raw:{path:p,flow:$('flow').value,cyto:$('cyto').value,fish:$('fish').value,ngspos:$('ngspos').value,ngstest:$('ngstest').value},flow:flowparse($('flow').value),mutations:muts($('ngspos').value,$('ngstest').value),cytoHits:[...new Set((($('cyto').value+' '+$('fish').value).match(/t\(8;21\)|inv\(16\)|t\(16;16\)|-7|del\(5q\)|-5|inv\(3\)|t\(3;3\)|t\(9;22\)/gi)||[]))]};let c=cyc(o.date);$('bmstage').innerHTML=`<div class=stage><b>Extraction staging area</b><p>${o.date} · ${o.diagnostic?'Diagnostic marrow':'Follow-up marrow'} · ${c?'C'+c.n+'D'+(dd(c.start,o.date)+1):'not assigned'}</p><p>Blasts: <b>${bl?bl+'%':'not extracted'}</b> · Flow markers: <b>${o.flow.length}</b> · Molecular observations: <b>${o.mutations.length}</b></p><p>${o.mutations.map(x=>`<span class="pill ${x.result==='Positive'?'warn':'ok'}">${x.gene} ${x.result}${x.vaf!=null?' '+x.vaf+'%':''}</span>`).join('')}</p><button class=btn onclick='confirmBM(${JSON.stringify(JSON.stringify(o))})'>Confirm import</button></div>`}
-function confirmBM(s){let o=JSON.parse(s);if(o.diagnostic)D.marrows.forEach(x=>x.diagnostic=false);D.marrows.push(o);D.marrows.sort((a,b)=>a.date.localeCompare(b.date));save();$('bmstage').innerHTML='<div class=good>Marrow package confirmed.</div>'}
-function fakeBM(){$('bmdate').value='2026-01-03';$('diag').checked=true;$('path').value='Hypercellular marrow involved by acute myeloid leukemia. Blasts comprise 62% of marrow cellularity.';$('flow').value='Abnormal myeloid blasts express CD13, bright CD33, partial CD34, CD117, HLA-DR and aberrant dim CD7. Negative for CD19 and CD56.';$('cyto').value='46,XY[20]';$('fish').value='AML FISH panel negative for tested rearrangements.';$('ngspos').value='NPM1 p.W288Cfs*12, VAF 34%';$('ngstest').value='NPM1 FLT3 IDH1 IDH2 TP53 NRAS KRAS DDX41 CEBPA RUNX1 ASXL1 SRSF2 SF3B1 U2AF1 ZRSR2 BCOR STAG2 EZH2 ETV6'}
-function counts(m){let end=new Date(dt(m.date).getTime()+14*86400000).toISOString().slice(0,10),e=D.cbc.filter(x=>x.date>=m.date&&x.date<=end),a=e.filter(x=>x.anc!=null).sort((x,y)=>y.anc-x.anc)[0],p=e.filter(x=>x.plt!=null).sort((x,y)=>y.plt-x.plt)[0];return{end,a,p}}
-function eln(){let m=D.marrows.find(x=>x.diagnostic);if(!m)return['Pending','No diagnostic marrow','Pending','No diagnostic marrow'];let pos=g=>m.mutations.some(x=>x.gene===g&&x.result==='Positive'),neg=g=>m.mutations.some(x=>x.gene===g&&x.result==='Negative'),adv=['TP53','ASXL1','RUNX1','SRSF2','SF3B1','U2AF1','ZRSR2','BCOR','STAG2','EZH2'].filter(pos),e22=adv.length?'Adverse':pos('NPM1')?'Favorable':'Unable to determine',w22=adv.length?'Driver(s): '+adv.join(', '):pos('NPM1')?'NPM1 detected':'Insufficient structured genetics',e24='Unable to determine',w24='Insufficient structured genetics';if(pos('TP53')){e24='Adverse';w24='TP53 detected'}else if(pos('FLT3')||pos('NRAS')||pos('KRAS')){e24='Intermediate';w24='Signaling mutation detected'}else if(['TP53','FLT3','NRAS','KRAS'].every(neg)){e24='Favorable';w24='No TP53/FLT3/NRAS/KRAS mutation detected'}if(D.base.phma==='Yes')w24+=' · *prior HMA: calculated category retained with applicability notation';return[e22,w22,e24,w24]}
-function problems(){let a=[];if(D.marrows.filter(x=>x.diagnostic).length!==1)a.push('Exactly one diagnostic/baseline marrow should be designated.');D.marrows.forEach(m=>{let c=counts(m);if(!c.a||!c.p)a.push(`Marrow ${m.date}: ANC and/or platelet value missing in 14-day response window.`)});return a}
-function render(){[['study','study'],['dx','dx'],['age','age'],['onto','onto'],['phma','phma'],['phmac','phmac'],['intent','intent']].forEach(([i,k])=>$(i).value=D.base[k]||'');[['hsct','hsct'],['hsctd','hsctd'],['rel','rel'],['reld','reld'],['vital','vital'],['death','death'],['nexttx','nexttx']].forEach(([i,k])=>$(i).value=D.out[k]||'');$('hdr').textContent=D.base.study?D.base.study+(D.base.dx?' · Diagnosed '+D.base.dx:''):'No patient selected';$('mID').textContent=D.base.study||'—';let req=[D.base.study,D.base.dx,D.base.age,D.base.onto,D.base.phma,D.marrows.some(x=>x.diagnostic),D.cycles.length,D.cbc.length,D.out.vital],comp=Math.round(req.filter(Boolean).length/req.length*100);$('mComp').textContent=comp+'%';$('mIssues').textContent=problems().length;
-$('clist').innerHTML=D.cycles.map((c,i)=>`<div class=card><h3>Cycle ${c.n} <span class=pill>${c.start?dxday(c.start):'start pending'}</span></h3><div class=row><div><label>Cycle start</label><input type=date value="${c.start}" onchange="uc(${i},'start',this.value)"></div><div><label>HMA</label><select onchange="uc(${i},'hma',this.value)"><option ${c.hma==='Azacitidine'?'selected':''}>Azacitidine</option><option ${c.hma==='Decitabine'?'selected':''}>Decitabine</option><option ${c.hma==='Oral decitabine-cedazuridine'?'selected':''}>Oral decitabine-cedazuridine</option></select></div><div><label>G-CSF</label><select onchange="uc(${i},'g',this.value)"><option></option><option ${c.g==='No'?'selected':''}>No</option><option ${c.g==='Yes'?'selected':''}>Yes</option><option ${c.g==='Unknown'?'selected':''}>Unknown</option></select></div></div><div class=row><div><label>VEN start <span class="pill ok">defaults C${c.n}D1</span></label><input type=date value="${c.vs||c.start}" onchange="uc(${i},'vs',this.value)"></div><div><label>Planned VEN days</label><input value="${c.vp||''}" onchange="uc(${i},'vp',this.value)"></div><div><label>VEN final dose</label><input type=date value="${c.ve||''}" onchange="uc(${i},'ve',this.value)"></div></div></div>`).join('');
-$('bmlist').innerHTML=D.marrows.length?D.marrows.map(m=>{let c=cyc(m.date),r=counts(m);return`<div class=card><h3>${m.date} ${m.diagnostic?'<span class="pill ok">Diagnostic</span>':''} <span class=pill>${dxday(m.date)}</span> ${c?`<span class=pill>C${c.n}D${dd(c.start,m.date)+1}</span>`:''}</h3><div class=row><div class=metric>Blasts<b>${m.blasts?m.blasts+'%':'—'}</b></div><div class=metric>Flow markers<b>${m.flow.length}</b></div><div class=metric>Positive mutations<b>${m.mutations.filter(x=>x.result==='Positive').length}</b></div></div><h3 style="margin-top:15px">Response-count window: ${m.date} → ${r.end}</h3><table><tr><th></th><th>Auto-selected best value</th><th>Date</th></tr><tr><td>ANC</td><td>${r.a?.anc??'—'}</td><td>${r.a?.date||'—'}</td></tr><tr><td>Platelets</td><td>${r.p?.plt??'—'}</td><td>${r.p?.date||'—'}</td></tr></table><details><summary>Parsed flow/genetics</summary><p>${m.flow.map(x=>`<span class=pill>${x.marker}: ${x.result}, ${x.modifier}</span>`).join(' ')}</p><p>${m.mutations.map(x=>`<span class=pill>${x.gene}: ${x.result}${x.vaf!=null?', VAF '+x.vaf+'%':''}</span>`).join(' ')}</p></details></div>`}).join(''):'<p class=help>No confirmed marrows yet.</p>';
-$('cbctable').innerHTML=D.cbc.length?`<table><tr><th>Date</th><th>Dx day</th><th>WBC</th><th>ANC</th><th>Hgb</th><th>Platelets</th></tr>${D.cbc.map(x=>`<tr><td>${x.date}</td><td>${dxday(x.date)}</td><td>${x.wbc??''}</td><td>${x.anc??''}</td><td>${x.hgb??''}</td><td>${x.plt??''}</td></tr>`).join('')}</table>`:'<p class=help>No confirmed CBC data.</p>';
-let m=D.marrows.find(x=>x.diagnostic),e=eln();$('bb').textContent=m?.blasts?m.blasts+'%':'—';$('e22').textContent=e[0];$('e22w').textContent=e[1];$('e24').textContent=e[2];$('e24w').textContent=e[3];let pr=problems();$('issues').innerHTML=pr.length?pr.map(x=>`<div class=stage>⚠ ${x}</div>`).join(''):'<div class=good>No current QA issues.</div>';
-let ev=[];if(D.base.dx)ev.push([D.base.dx,'AML diagnosis · Dx+0']);D.cycles.forEach(c=>{if(c.start)ev.push([c.start,`Cycle ${c.n} ${c.hma}/VEN start · ${dxday(c.start)}`]);if(c.ve)ev.push([c.ve,`Cycle ${c.n} VEN final dose · ${dxday(c.ve)}`])});D.marrows.forEach(m=>ev.push([m.date,`${m.diagnostic?'Diagnostic ':''}marrow${m.blasts?' · '+m.blasts+'% blasts':''} · ${dxday(m.date)}`]));if(D.out.hsctd)ev.push([D.out.hsctd,'AlloHSCT · '+dxday(D.out.hsctd)]);if(D.out.reld)ev.push([D.out.reld,'Relapse/progression · '+dxday(D.out.reld)]);if(D.out.death)ev.push([D.out.death,'Death · '+dxday(D.out.death)]);ev.sort((a,b)=>a[0].localeCompare(b[0]));$('tl').innerHTML=ev.map(x=>`<div class=event><b>${x[0]}</b><div>${x[1]}</div></div>`).join('')||'<p class=help>No dated events.</p>'}
+function delCycle(i){
+ if(!confirm(`Delete Cycle ${D.cycles[i].n}? Subsequent cycles will be renumbered and marrow assignments recalculated.`))return;
+ log('delete_cycle',D.cycles[i]); D.cycles.splice(i,1); D.cycles.forEach((c,j)=>c.n=j+1); save()
+}
+function cyc(d){
+ if(!d)return null; let date=d.slice(0,10),a=D.cycles.filter(x=>x.start).sort((x,y)=>x.start.localeCompare(y.start)),h=null;
+ a.forEach((c,i)=>{if(date>=c.start&&(!a[i+1]||date<a[i+1].start))h=c}); return h
+}
+function nextCycleAfter(date){
+ let a=D.cycles.filter(x=>x.start&&x.start>date).sort((x,y)=>x.start.localeCompare(y.start)); return a[0]||null
+}
+
+function normalizeTimestamp(line){
+ let m=line.match(/^\s*(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{2})\s*$/);
+ if(!m)return null;
+ let y=m[3].length===2?2000+Number(m[3]):Number(m[3]);
+ return `${y}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}T${m[4].padStart(2,'0')}:${m[5]}:00`;
+}
+function numericFrom(line){
+ let m=line.match(/:\s*([0-9]+(?:\.[0-9]+)?)/); return m?Number(m[1]):null
+}
+function parseCBC(id){
+ let raw=$(id).value, blocks=[], cur=null;
+ raw.split(/\r?\n/).forEach(line=>{
+   let ts=normalizeTimestamp(line);
+   if(ts){ if(cur)blocks.push(cur); cur={timestamp:ts,date:ts.slice(0,10),wbc:null,anc:null,hgb:null,plt:null,anc_source:'',source:'raw Epic block extraction'}; return; }
+   if(!cur)return;
+   if(/Platelet Count \(Plt\)|\bPlatelets?\b/i.test(line)){let v=numericFrom(line); if(v!=null)cur.plt=v}
+   else if(/Neutrophil Absolute \(Man Diff\)/i.test(line)){let v=numericFrom(line); if(v!=null){cur.anc=v;cur.anc_source='Manual differential'}}
+   else if(/Neutrophils Absolute/i.test(line)){let v=numericFrom(line); if(v!=null){cur.anc=v;cur.anc_source='Automated differential'}}
+   else if(/\bWBC\b/i.test(line)){let v=numericFrom(line); if(v!=null)cur.wbc=v}
+   else if(/Hemoglobin|\bHgb\b/i.test(line)){let v=numericFrom(line); if(v!=null)cur.hgb=v}
+ });
+ if(cur)blocks.push(cur);
+ blocks=blocks.filter(x=>[x.wbc,x.anc,x.hgb,x.plt].some(v=>v!=null));
+ let dup=new Set(), unique=[];
+ blocks.forEach(x=>{let key=x.timestamp; if(!dup.has(key)){dup.add(key);unique.push(x)}});
+ window._cbcStage=unique;
+ $('cbcstage').innerHTML=unique.length?`<div class=stage><b>${unique.length} CBC observations recognized.</b><br><span class=small>${unique.filter(x=>x.anc!=null).length} with ANC · ${unique.filter(x=>x.plt!=null).length} with platelets · ${new Set(unique.map(x=>x.date)).size} calendar days</span><div class=tools><button class=btn onclick="confirmCBC()">Confirm import</button></div></div>`:`<div class=stage>No Epic-style dated CBC blocks recognized.</div>`
+}
+function confirmCBC(){
+ let map=new Map(D.cbc.map(x=>[x.timestamp,x]));
+ (window._cbcStage||[]).forEach(x=>map.set(x.timestamp,{...(map.get(x.timestamp)||{}),...x}));
+ D.cbc=[...map.values()].sort((a,b)=>a.timestamp.localeCompare(b.timestamp)); log('cbc_import',{count:(window._cbcStage||[]).length}); save(); $('cbcstage').innerHTML='<div class=good>CBC observations confirmed.</div>'
+}
+function fakeCBC(id){
+ $(id).value=`01/23/24 13:38
+Platelet Count (Plt): 86 (L)
+Neutrophil Absolute (Man Diff): 0.48 (L)
+
+01/25/24 09:34
+Platelet Count (Plt): 85 (L)
+Neutrophils Absolute: 0.40 (L)
+
+03/08/24 06:29
+Platelet Count (Plt): 57 (L)
+
+03/08/24 07:46
+Platelet Count (Plt): 59 (L)
+Neutrophil Absolute (Man Diff): 0.07 (L)
+
+03/08/24 16:52
+Platelet Count (Plt): 36 (L)
+Neutrophil Absolute (Man Diff): 0.09 (L)`
+}
+function manualCBC(){
+ let ts=prompt('CBC date/time (YYYY-MM-DD HH:MM)'); if(!ts)return;
+ let normalized=ts.replace(' ','T')+(ts.length===16?':00':'');
+ if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(normalized)){alert('Use YYYY-MM-DD HH:MM');return}
+ let anc=prompt('ANC (leave blank if unavailable)'); let plt=prompt('Platelets (leave blank if unavailable)');
+ D.cbc.push({timestamp:normalized,date:normalized.slice(0,10),anc:anc===''?null:Number(anc),plt:plt===''?null:Number(plt),wbc:null,hgb:null,anc_source:'Manual entry',source:'manual abstraction'});
+ D.cbc.sort((a,b)=>a.timestamp.localeCompare(b.timestamp)); save()
+}
+function editCBC(i){
+ let x=D.cbc[i], anc=prompt('ANC',x.anc??''), plt=prompt('Platelets',x.plt??'');
+ if(anc===null||plt===null)return; x.anc=anc===''?null:Number(anc);x.plt=plt===''?null:Number(plt);x.source='manual override';save()
+}
+function delCBC(i){if(confirm('Delete this CBC observation?')){D.cbc.splice(i,1);save()}}
+
+function muts(raw,tested){
+ let known=['NPM1','FLT3','IDH1','IDH2','TP53','NRAS','KRAS','DDX41','CEBPA','RUNX1','ASXL1','SRSF2','SF3B1','U2AF1','ZRSR2','BCOR','STAG2','EZH2','ETV6'];
+ let a=[];
+ known.forEach(g=>{
+   if(new RegExp('\\b'+g+'\\b','i').test(raw)){
+     let m=new RegExp(g+'[^\\n]*?(?:VAF[^0-9]*)?([0-9.]+)\\s*%','i').exec(raw);
+     a.push({gene:g,result:'Positive',vaf:m?Number(m[1]):null,source:'raw extraction'})
+   } else if(new RegExp('\\b'+g+'\\b','i').test(tested)) a.push({gene:g,result:'Negative',vaf:null,source:'tested list + not detected'})
+ }); return a
+}
+function flowparse(s){
+ let a=[],re=/\b((?:cy)?CD\d{1,3}|HLA-DR|MPO|TdT)\b([^.;\n]*)/gi,m;
+ while((m=re.exec(s))){
+   let t=m[2],res=/negative|not express/i.test(t)?'Negative':/express|positive/i.test(t)?'Positive':'Reported',
+   mod=(t.match(/\b(bright|dim|partial|variable|heterogeneous|aberrant|moderate)\b/gi)||[]).join(', ');
+   a.push({marker:m[1],result:res,modifier:mod||'Not stated'})
+ } return a
+}
+function extractBM(){
+ if(!$('bmdate').value){$('bmstage').innerHTML='<div class=stage>Enter a marrow date.</div>';return}
+ let p=$('path').value,bl=(p.match(/(?:blasts?|blast count)[^0-9]{0,20}([0-9.]+)\s*%/i)||[])[1]||'';
+ let o={id:'BM'+Date.now(),date:$('bmdate').value,diagnostic:$('diag').checked,blasts:bl,pb:'Absent',emd:'Absent/resolved',
+ raw:{path:p,flow:$('flow').value,cyto:$('cyto').value,fish:$('fish').value,ngspos:$('ngspos').value,ngstest:$('ngstest').value},
+ flow:flowparse($('flow').value),mutations:muts($('ngspos').value,$('ngstest').value),
+ cytoHits:[...new Set((($('cyto').value+' '+$('fish').value).match(/t\(8;21\)|inv\(16\)|t\(16;16\)|-7|del\(5q\)|-5|inv\(3\)|t\(3;3\)|t\(9;22\)/gi)||[]))],
+ manualAnc:null,manualAncDate:'',manualPlt:null,manualPltDate:'',source:'raw source extraction'};
+ let c=cyc(o.date); window._bmStage=o;
+ $('bmstage').innerHTML=`<div class=stage><b>Extraction staging area</b><p>${o.date} · ${o.diagnostic?'Diagnostic marrow':'Follow-up marrow'} · ${c?'C'+c.n+'D'+(dd(c.start,o.date)+1):'not assigned'}</p><p>Blasts: <b>${bl?bl+'%':'not extracted'}</b> · Flow markers: <b>${o.flow.length}</b> · Molecular observations: <b>${o.mutations.length}</b></p><p>${o.mutations.map(x=>`<span class="pill ${x.result==='Positive'?'warn':'ok'}">${x.gene} ${x.result}${x.vaf!=null?' '+x.vaf+'%':''}</span>`).join('')}</p><button class=btn onclick="confirmBM()">Confirm import</button></div>`
+}
+function confirmBM(){let o=window._bmStage;if(!o)return;if(o.diagnostic)D.marrows.forEach(x=>x.diagnostic=false);D.marrows.push(o);D.marrows.sort((a,b)=>a.date.localeCompare(b.date));save();$('bmstage').innerHTML='<div class=good>Marrow package confirmed.</div>'}
+function fakeBM(){
+ $('bmdate').value='2026-01-03';$('diag').checked=true;$('path').value='Hypercellular marrow involved by acute myeloid leukemia. Blasts comprise 62% of marrow cellularity.';
+ $('flow').value='Abnormal myeloid blasts express CD13, bright CD33, partial CD34, CD117, HLA-DR and aberrant dim CD7. Negative for CD19 and CD56.';
+ $('cyto').value='46,XY[20]';$('fish').value='AML FISH panel negative for tested rearrangements.';$('ngspos').value='NPM1 p.W288Cfs*12, VAF 34%';
+ $('ngstest').value='NPM1 FLT3 IDH1 IDH2 TP53 NRAS KRAS DDX41 CEBPA RUNX1 ASXL1 SRSF2 SF3B1 U2AF1 ZRSR2 BCOR STAG2 EZH2 ETV6'
+}
+function manualMarrow(){
+ let date=prompt('Marrow date (YYYY-MM-DD)'); if(!date)return;
+ let blasts=prompt('Marrow blasts (%)'); if(blasts===null)return;
+ let diagnostic=confirm('Designate this as the diagnostic/baseline marrow?');
+ if(diagnostic)D.marrows.forEach(x=>x.diagnostic=false);
+ D.marrows.push({id:'BM'+Date.now(),date,diagnostic,blasts, pb:'Absent',emd:'Absent/resolved',raw:{path:'',flow:'',cyto:'',fish:'',ngspos:'',ngstest:''},flow:[],mutations:[],cytoHits:[],manualAnc:null,manualAncDate:'',manualPlt:null,manualPltDate:'',source:'manual abstraction'});
+ D.marrows.sort((a,b)=>a.date.localeCompare(b.date)); save()
+}
+function editMarrow(i){
+ let m=D.marrows[i],date=prompt('Marrow date',m.date);if(!date)return;let blasts=prompt('Marrow blasts (%)',m.blasts??'');if(blasts===null)return;
+ let diag=confirm('Should this be the diagnostic/baseline marrow?'); if(diag)D.marrows.forEach((x,j)=>{if(j!==i)x.diagnostic=false});
+ m.date=date;m.blasts=blasts;m.diagnostic=diag;m.source='manual override';save()
+}
+function delMarrow(i){if(confirm('Delete this marrow?')){D.marrows.splice(i,1);save()}}
+
+function responseWindow(m){
+ let next=nextCycleAfter(m.date);
+ let terminal=[D.out.hsctd,D.out.reld,D.out.death,D.out.lastalive].filter(x=>x&&x>=m.date).sort()[0]||'';
+ let end=next?new Date(dt(next.start).getTime()-86400000).toISOString().slice(0,10):terminal||'';
+ let e=D.cbc.filter(x=>x.date>=m.date&&(!end||x.date<=end));
+ let a=e.filter(x=>x.anc!=null).sort((x,y)=>y.anc-x.anc)[0],p=e.filter(x=>x.plt!=null).sort((x,y)=>y.plt-x.plt)[0];
+ let fa=m.manualAnc!=null?{anc:m.manualAnc,date:m.manualAncDate,manual:true}:a;
+ let fp=m.manualPlt!=null?{plt:m.manualPlt,date:m.manualPltDate,manual:true}:p;
+ return{end: end||'open terminal window',a,p,fa,fp}
+}
+function setManualCounts(i){
+ let m=D.marrows[i],a=prompt('Manual ANC override (blank to clear)',m.manualAnc??''),ad=prompt('ANC date (YYYY-MM-DD; blank to clear)',m.manualAncDate||''),
+ p=prompt('Manual platelet override (blank to clear)',m.manualPlt??''),pd=prompt('Platelet date (YYYY-MM-DD; blank to clear)',m.manualPltDate||'');
+ if(a===null||ad===null||p===null||pd===null)return;
+ m.manualAnc=a===''?null:Number(a);m.manualAncDate=ad;m.manualPlt=p===''?null:Number(p);m.manualPltDate=pd;save()
+}
+function classifyResponse(m){
+ let r=responseWindow(m),bm=Number(m.blasts),anc=r.fa?.anc,plt=r.fp?.plt;
+ if(!Number.isFinite(bm))return 'Nonevaluable';
+ if(bm<5 && m.pb!=='Present' && m.emd==='Absent/resolved'){
+   if(anc==null||plt==null)return 'MLFS';
+   if(anc>=1&&plt>=100)return 'CR';
+   if(anc>=0.5&&plt>=50)return 'CRh';
+   if(anc>=1||plt>=100)return 'CRi';
+   return 'MLFS'
+ }
+ if(bm>=5&&bm<=25 && anc>=1&&plt>=100){
+   let d=D.marrows.find(x=>x.diagnostic),base=Number(d?.blasts);
+   if(Number.isFinite(base)&&bm<=base*0.5)return 'PR'
+ }
+ return 'No response'
+}
+function autoRelapse(){
+ let ordered=D.marrows.slice().sort((a,b)=>a.date.localeCompare(b.date)), remission=false, cand='';
+ for(let m of ordered){
+   let resp=classifyResponse(m);
+   if(['CR','CRh','CRi'].includes(resp))remission=true;
+   else if(remission && Number(m.blasts)>=5){cand=m.date;break}
+ }
+ D.out.relapse_date_auto=cand;
+ if(cand && !D.out.relapse_overridden){
+   D.out.relapse_date_final=cand;D.out.relapse_basis='Auto: marrow';D.out.rel='Yes'
+ }
+}
+function eln(){
+ let m=D.marrows.find(x=>x.diagnostic);if(!m)return['Pending','No diagnostic marrow','Pending','No diagnostic marrow'];
+ let pos=g=>m.mutations.some(x=>x.gene===g&&x.result==='Positive'),neg=g=>m.mutations.some(x=>x.gene===g&&x.result==='Negative');
+ let adv=['TP53','ASXL1','RUNX1','SRSF2','SF3B1','U2AF1','ZRSR2','BCOR','STAG2','EZH2'].filter(pos);
+ let e22=adv.length?'Adverse':pos('NPM1')?'Favorable':'Unable to determine',w22=adv.length?'Driver(s): '+adv.join(', '):pos('NPM1')?'NPM1 detected':'Insufficient structured genetics';
+ let e24='Unable to determine',w24='Insufficient structured genetics';
+ if(pos('TP53')){e24='Adverse';w24='TP53 detected'}else if(pos('FLT3')||pos('NRAS')||pos('KRAS')){e24='Intermediate';w24='Signaling mutation detected'}else if(['TP53','FLT3','NRAS','KRAS'].every(neg)){e24='Favorable';w24='No TP53/FLT3/NRAS/KRAS mutation detected'}
+ if(D.base.phma==='Yes')w24+=' · *prior HMA: calculated category retained with applicability notation';
+ return[e22,w22,e24,w24]
+}
+function problems(){
+ let a=[];if(D.marrows.filter(x=>x.diagnostic).length!==1)a.push('Exactly one diagnostic/baseline marrow should be designated.');
+ D.marrows.forEach(m=>{let r=responseWindow(m);if(!r.fa||!r.fp)a.push(`Marrow ${m.date}: ANC and/or platelet recovery value is missing before the next treatment cycle / terminal boundary.`)});
+ return a
+}
+function render(){
+ autoRelapse();
+ [['study','study'],['dx','dx'],['age','age'],['onto','onto'],['phma','phma'],['phmac','phmac'],['intent','intent']].forEach(([i,k])=>$(i).value=D.base[k]||'');
+ [['hsct','hsct'],['hsctd','hsctd'],['rel','rel'],['vital','vital'],['death','death'],['lastalive','lastalive'],['nexttx','nexttx']].forEach(([i,k])=>$(i).value=D.out[k]||'');
+ $('reld').value=D.out.relapse_date_final||'';$('relbase').value=D.out.relapse_basis||'';$('relbasis').textContent=D.out.relapse_overridden?'Manual override active':D.out.relapse_date_auto?'Auto-populated from first qualifying post-remission marrow':'';
+ $('relAutoBox').innerHTML=D.out.relapse_date_auto?`<div class=good><b>Auto relapse candidate:</b> ${D.out.relapse_date_auto} from first post-remission marrow with ≥5% blasts. ${D.out.relapse_overridden?'Final date has been manually overridden.':''}</div>`:'';
+ $('hdr').textContent=D.base.study?D.base.study+(D.base.dx?' · Diagnosed '+D.base.dx:''):'No patient selected';
+ $('mID').textContent=D.base.study||'—';
+ let req=[D.base.study,D.base.dx,D.base.age,D.base.onto,D.base.phma,D.marrows.some(x=>x.diagnostic),D.cycles.length,D.cbc.length,D.out.vital],comp=Math.round(req.filter(Boolean).length/req.length*100);
+ $('mComp').textContent=comp+'%';$('mIssues').textContent=problems().length;
+ $('clist').innerHTML=D.cycles.map((c,i)=>{
+   let next=D.cycles[i+1],end=next?.start?new Date(dt(next.start).getTime()-86400000).toISOString().slice(0,10):'',len=end?dd(c.start,end)+1:'';
+   return `<div class=card><h3>Cycle ${c.n} <span class=pill>${c.start?dxday(c.start):'start pending'}</span></h3>
+   <div class=row><div><label>Cycle start</label><input type=date value="${c.start}" onchange="uc(${i},'start',this.value)"></div><div><label>HMA</label><select onchange="uc(${i},'hma',this.value)"><option ${c.hma==='Azacitidine'?'selected':''}>Azacitidine</option><option ${c.hma==='Decitabine'?'selected':''}>Decitabine</option><option ${c.hma==='Oral decitabine-cedazuridine'?'selected':''}>Oral decitabine-cedazuridine</option></select></div><div><label>Derived cycle end</label><input disabled value="${end?end+' · '+len+' days':'Open / terminal cycle'}"></div></div>
+   <div class=row><div><label>VEN start <span class="pill ok">defaults C${c.n}D1</span></label><input type=date value="${c.vs||c.start}" onchange="uc(${i},'vs',this.value)"></div><div><label>Planned VEN days</label><input value="${c.vp||''}" onchange="uc(${i},'vp',this.value)"></div><div><label>VEN final dose</label><input type=date value="${c.ve||''}" onchange="uc(${i},'ve',this.value)"></div></div>
+   <div class=actions><button class="btn danger" onclick="delCycle(${i})">Delete cycle</button></div></div>`
+ }).join('');
+ $('bmlist').innerHTML=D.marrows.length?D.marrows.map((m,i)=>{
+   let c=cyc(m.date),r=responseWindow(m),resp=classifyResponse(m);
+   return `<div class=card><h3>${m.date} ${m.diagnostic?'<span class="pill ok">Diagnostic</span>':''} <span class=pill>${dxday(m.date)}</span> ${c?`<span class=pill>C${c.n}D${dd(c.start,m.date)+1}</span>`:''}</h3>
+   <div class=row><div class=metric>Blasts<b>${m.blasts?m.blasts+'%':'—'}</b></div><div class=metric>Calculated response<b>${resp}</b></div><div class=metric>Positive mutations<b>${m.mutations.filter(x=>x.result==='Positive').length}</b></div></div>
+   <h4>ELN hematologic recovery window: ${m.date} → ${r.end}</h4>
+   <table><tr><th></th><th>Final value used</th><th>Date</th><th>Source</th></tr>
+   <tr><td>ANC</td><td>${r.fa?.anc??'—'}</td><td>${r.fa?.date||'—'}</td><td>${r.fa?.manual?'manual override':'best eligible CBC'}</td></tr>
+   <tr><td>Platelets</td><td>${r.fp?.plt??'—'}</td><td>${r.fp?.date||'—'}</td><td>${r.fp?.manual?'manual override':'best eligible CBC'}</td></tr></table>
+   <details><summary>Parsed flow/genetics</summary><p>${m.flow.map(x=>`<span class=pill>${x.marker}: ${x.result}, ${x.modifier}</span>`).join(' ')}</p><p>${m.mutations.map(x=>`<span class=pill>${x.gene}: ${x.result}${x.vaf!=null?', VAF '+x.vaf+'%':''}</span>`).join(' ')}</p></details>
+   <div class=actions><button class="btn alt" onclick="setManualCounts(${i})">Override counts</button><button class="btn alt" onclick="editMarrow(${i})">Edit marrow</button><button class="btn danger" onclick="delMarrow(${i})">Delete marrow</button></div></div>`
+ }).join(''):'<p class=help>No confirmed marrows yet.</p>';
+ $('cbctable').innerHTML=D.cbc.length?`<table><tr><th>Date/time</th><th>Dx day</th><th>ANC</th><th>ANC source</th><th>Platelets</th><th>Source</th><th></th></tr>${D.cbc.map((x,i)=>`<tr><td>${x.timestamp.replace('T',' ').slice(0,16)}</td><td>${dxday(x.date)}</td><td>${x.anc??''}</td><td>${x.anc_source||''}</td><td>${x.plt??''}</td><td>${x.source||''}</td><td><button class="btn alt" onclick="editCBC(${i})">Edit</button> <button class="btn danger" onclick="delCBC(${i})">Delete</button></td></tr>`).join('')}</table>`:'<p class=help>No confirmed CBC data.</p>';
+ let m=D.marrows.find(x=>x.diagnostic),e=eln();$('bb').textContent=m?.blasts?m.blasts+'%':'—';$('e22').textContent=e[0];$('e22w').textContent=e[1];$('e24').textContent=e[2];$('e24w').textContent=e[3];
+ let pr=problems();$('issues').innerHTML=pr.length?pr.map(x=>`<div class=stage>⚠ ${x}</div>`).join(''):'<div class=good>No current QA issues.</div>';
+ let ev=[];if(D.base.dx)ev.push([D.base.dx,'AML diagnosis · Dx+0']);D.cycles.forEach(c=>{if(c.start)ev.push([c.start,`Cycle ${c.n} ${c.hma}/VEN start · ${dxday(c.start)}`]);if(c.ve)ev.push([c.ve,`Cycle ${c.n} VEN final dose · ${dxday(c.ve)}`])});D.marrows.forEach(m=>ev.push([m.date,`${m.diagnostic?'Diagnostic ':''}marrow · ${classifyResponse(m)}${m.blasts?' · '+m.blasts+'% blasts':''} · ${dxday(m.date)}`]));if(D.out.hsctd)ev.push([D.out.hsctd,'AlloHSCT · '+dxday(D.out.hsctd)]);if(D.out.relapse_date_final)ev.push([D.out.relapse_date_final,'Relapse · '+(D.out.relapse_basis||'basis unspecified')+' · '+dxday(D.out.relapse_date_final)]);if(D.out.death)ev.push([D.out.death,'Death · '+dxday(D.out.death)]);ev.sort((a,b)=>a[0].localeCompare(b[0]));$('tl').innerHTML=ev.map(x=>`<div class=event><b>${x[0]}</b><div>${x[1]}</div></div>`).join('')||'<p class=help>No dated events.</p>'
+}
 function dl(n,t,type='text/plain'){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type}));a.download=n;a.click()}
-function jsonOut(){dl((D.base.study||'AML-demo')+'_V2.json',JSON.stringify(D,null,2),'application/json')}
+function jsonOut(){dl((D.base.study||'AML-demo')+'_V2.1.json',JSON.stringify(D,null,2),'application/json')}
 function csv(rows){if(!rows.length)return'';let k=[...new Set(rows.flatMap(Object.keys))];return[k.join(','),...rows.map(r=>k.map(x=>`"${String(r[x]??'').replaceAll('"','""')}"`).join(','))].join('\n')}
-function csvOut(k){let r=k==='cycles'?D.cycles.map(x=>({study_id:D.base.study,...x})):k==='marrows'?D.marrows.map(x=>({study_id:D.base.study,marrow_id:x.id,date:x.date,diagnostic:x.diagnostic,blasts:x.blasts,cycle:cyc(x.date)?.n||''})):k==='cbc'?D.cbc.map(x=>({study_id:D.base.study,...x})):D.marrows.flatMap(m=>m.mutations.map(x=>({study_id:D.base.study,marrow_id:m.id,marrow_date:m.date,...x})));dl(k+'.csv',csv(r),'text/csv')}
-function resetAll(){if(confirm('Clear locally stored demo data?')){localStorage.removeItem(K);location.reload()}}render();
-</script></body></html>
+function csvOut(k){let r=k==='cycles'?D.cycles.map(x=>({study_id:D.base.study,...x})):k==='marrows'?D.marrows.map(x=>({study_id:D.base.study,marrow_id:x.id,date:x.date,diagnostic:x.diagnostic,blasts:x.blasts,calculated_response:classifyResponse(x),cycle:cyc(x.date)?.n||''})):k==='cbc'?D.cbc.map(x=>({study_id:D.base.study,...x})):D.marrows.flatMap(m=>m.mutations.map(x=>({study_id:D.base.study,marrow_id:m.id,marrow_date:m.date,...x})));dl(k+'.csv',csv(r),'text/csv')}
+function resetAll(){if(confirm('Clear locally stored demo data?')){localStorage.removeItem(K);location.reload()}}
+render();
+</script>
+</body></html>
