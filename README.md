@@ -1,20 +1,16 @@
-# AML AZA/VEN Tracker V3.0
+# AML AZA/VEN Tracker V3.1
 
-Major V3.0 changes:
-- Chronology-derived cycle numbering with stable IDs.
-- Collapsible cycle cards with expand/collapse all.
-- Chronology-derived BMBx numbering and collapsible BMBx cards.
-- Response CBC candidate selectors for ANC and platelets, independently selectable.
-- Adequate aspirate morphology prioritized over flow for response blast enumeration; limited aspirates trigger fallback/adjudication.
-- ELN 2022 risk now incorporates cytogenetics and FLT3-ITD/NPM1 interactions.
-- FLT3-ITD and FLT3-TKD tracked separately in a key molecular marker-status table.
-- ELN 2024 Less-Intensive calculated independently and marked Not applicable after prior HMA.
-- PR with missing counts now returns Pending count recovery data.
-- MLFS included as prior remission state for morphologic relapse surveillance.
-- Structured MRD numeric %, assay LOD/sensitivity %, specimen, and local/central lab.
-- Safer rendering of cycle notes/reasons.
-- Local calendar arithmetic avoids UTC date-shift behavior.
-- Terminal cycles display a provisional 28-day derived end when no later cycle is entered.
-- V2.10 localStorage is accepted as a migration fallback.
+Clinical-logic hardening release.
 
-This remains a de-identified workflow prototype and is not a PHI-ready production database.
+- Blast hierarchy: manual adjudication → adequate aspirate → adequate flow → core/IHC → limited aspirate.
+- Raw cytogenetic/FISH text cannot directly drive ELN risk.
+- ELN 2022 consumes only structured Present/Positive observations.
+- RUNX1 copy gain is distinct from RUNX1::RUNX1T1.
+- Negative FISH cannot trigger favorable/adverse risk.
+- ELN 2022 now returns an auditable evidence trace.
+- TP53 VAF ≥10%, NPM1 + adverse cytogenetics, CBF AML, CEBPA-bZIP, t(9;11), adverse cytogenetics, MR genes, and FLT3-ITD have explicit branches.
+- ELN 2024 Less-Intensive is isolated from ELN 2022 and uses prior HMA, TP53, DDX41, FLT3-ITD, NRAS, and KRAS only.
+- Unknown required assay status propagates to Unable to determine.
+- DDX41 is shown in the key molecular marker table.
+
+De-identified prototype only; not a PHI-ready production database.

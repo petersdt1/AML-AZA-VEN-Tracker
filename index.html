@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AML AZA/VEN Tracker V3.0</title>
+<title>AML AZA/VEN Tracker V3.1</title>
 <style>
 :root{
   --bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#667085;--line:#dde3ec;
@@ -43,7 +43,7 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 </style>
 </head>
 <body>
-<header><h1>AML AZA/VEN Longitudinal Tracker V3.0</h1><div class="sub" id="hdr">No patient selected</div></header>
+<header><h1>AML AZA/VEN Longitudinal Tracker V3.1</h1><div class="sub" id="hdr">No patient selected</div></header>
 <div class="demo"><b>DEMO / FAKE DATA ONLY.</b> Static GitHub prototype. Do not enter names, MRNs, DOBs, or PHI.</div>
 <div class="wrap"><div class="layout">
 <nav>
@@ -110,7 +110,7 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 <label>Transplant intent at HMA/VEN start</label><select id="intent" onchange="baseSave()"><option></option><option>Yes</option><option>No</option><option>Uncertain</option><option>Unknown</option></select>
 </div>
 <div class="card"><h3>Calculated diagnostic classification</h3>
-<div class="row"><div class="metric">Baseline blasts<b id="bb">—</b><span class="small" id="bbsrc"></span></div><div class="metric">ELN 2022<b id="e22">Pending</b><span class="small" id="e22w"></span></div><div class="metric">ELN 2024 Less-Intensive<b id="e24">Pending</b><span class="small" id="e24w"></span></div></div>
+<div class="row"><div class="metric">Baseline blasts<b id="bb">—</b><span class="small" id="bbsrc"></span></div><div class="metric">ELN 2022<b id="e22">Pending</b><span class="small" id="e22w" style="white-space:pre-line"></span></div><div class="metric">ELN 2024 Less-Intensive<b id="e24">Pending</b><span class="small" id="e24w" style="white-space:pre-line"></span></div></div>
 <p class="help">ELN 2022 and ELN 2024 Less-Intensive are calculated independently. Unknown assay coverage remains Unknown rather than being assumed negative.</p>
 </div>
 
@@ -130,7 +130,7 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 <div><label>Manual category override</label><select id="cytoOverride" onchange="setCytoOverride(this.value)">
 <option value="">Automatic</option><option>Normal karyotype</option><option>Abnormal, non-complex/non-monosomal</option><option>Complex karyotype</option><option>Monosomal karyotype</option><option>Complex + monosomal karyotype</option><option>Failed / insufficient</option><option>Unknown</option>
 </select></div></div>
-<details><summary>Raw diagnostic cytogenetics / FISH</summary><pre id="rawCyto" style="white-space:pre-wrap;font:inherit;font-size:12px"></pre></details>
+<p class="help">ELN risk uses only structured Present/Positive observations. Raw report text is display-only and never directly assigns risk.</p><details><summary>Raw diagnostic cytogenetics / FISH</summary><pre id="rawCyto" style="white-space:pre-wrap;font:inherit;font-size:12px"></pre></details>
 </div>
 </section>
 
@@ -244,8 +244,8 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 </main></div></div>
 
 <script>
-const K='AML_AV_V30';
-let D=JSON.parse(localStorage.getItem(K)||localStorage.getItem('AML_AV_V210')||'null')||{
+const K='AML_AV_V31';
+let D=JSON.parse(localStorage.getItem(K)||localStorage.getItem('AML_AV_V30')||localStorage.getItem('AML_AV_V210')||'null')||{
   base:{},cycles:[],marrows:[],cbc:[],
   out:{relapse_date_auto:'',relapse_date_final:'',relapse_basis:'',relapse_overridden:false},
   audit:[]
@@ -535,12 +535,12 @@ function preferredBlast(m){
  if(m.preferredBlastManual!==null&&m.preferredBlastManual!==undefined&&m.preferredBlastManual!=='')return{value:Number(m.preferredBlastManual),source:'Manual adjudication',indeterminate:false};
  let limited=/Hemodilute|Aspicular|aparticulate/i.test(m.aspirateAdequacy||'');
  if(m.blastAspirate!=null&&!limited)return{value:Number(m.blastAspirate),source:'Aspirate/manual differential (adequate morphology)',indeterminate:false};
+ if(m.blastFlow!=null&&m.flowAdequate!==false)return{value:Number(m.blastFlow),source:'Flow cytometry (adequate; aspirate limited/unavailable)',indeterminate:false};
  if(m.blastIhcLow!=null&&m.blastIhcHigh!=null){
    if(Number(m.blastIhcLow)===Number(m.blastIhcHigh))return{value:Number(m.blastIhcLow),source:'Core/IHC',indeterminate:false};
    if(Number(m.blastIhcLow)<5&&Number(m.blastIhcHigh)>=5)return{value:null,source:`Core/IHC range ${m.blastIhcLow}–${m.blastIhcHigh}% crosses 5% threshold`,indeterminate:true};
    return{value:Number(m.blastIhcHigh),source:`Core/IHC range ${m.blastIhcLow}–${m.blastIhcHigh}% (upper bound used)`,indeterminate:false};
  }
- if(m.blastFlow!=null&&m.flowAdequate!==false)return{value:Number(m.blastFlow),source:'Flow cytometry crosscheck (morphology unavailable/limited)',indeterminate:false};
  if(m.blastAspirate!=null)return{value:Number(m.blastAspirate),source:`Aspirate/manual differential (${m.aspirateAdequacy||'limited'}; adjudication recommended)`,indeterminate:true};
  return{value:null,source:'No structured blast source',indeterminate:true}
 }
@@ -1215,32 +1215,131 @@ function markerStatus(m,key){
  let o=D.base.marker_overrides?.[key];if(o&&o!=='Automatic')return{status:o,evidence:'Manual structured override'};return markerAutoStatus(m,key)
 }
 function setMarkerOverride(key,v){D.base.marker_overrides=D.base.marker_overrides||{};if(v==='Automatic')delete D.base.marker_overrides[key];else D.base.marker_overrides[key]=v;save()}
-function eln2022AdverseCytogenetics(m){
- if(!m)return[];let hits=[],d=deriveCytogenetics(m),s=[...(m.cytoObservations||[]).map(x=>x.abnormality||''),...(m.fishObservations||[]).filter(x=>x.result==='Positive').map(x=>x.target||''),m.raw?.cyto||'',m.raw?.fish||''].join(' ');
- if(d.category.includes('Complex'))hits.push('complex karyotype');if(d.category.includes('Monosomal'))hits.push('monosomal karyotype');
- [[/(\-5\b|del\s*\(?5|5q.*del)/i,'-5/del(5q)'],[/(\-7\b|monosomy\s*7)/i,'-7'],[/(\-17\b|17p.*(?:abn|del)|del\s*\(?17)/i,'-17/abn(17p)'],[/(inv\s*\(?3|t\s*\(?3\s*;\s*3|MECOM.*rearr|3q26.*MECOM)/i,'MECOM-rearranged'],[/(t\s*\(?6\s*;\s*9|DEK.*NUP214)/i,'DEK::NUP214'],[/(t\s*\(?9\s*;\s*22|BCR.*ABL1)/i,'BCR::ABL1']].forEach(([r,l])=>{if(r.test(s)&&!hits.includes(l))hits.push(l)});
- let k=markerStatus(m,'KMT2A');if(k.status==='Positive'&&!/t\s*\(?9\s*;\s*11|MLLT3/i.test(s))hits.push('KMT2A rearrangement');return hits
+function structuredPositiveGeneticStrings(m){
+ let out=[];
+ (m?.cytoObservations||[]).filter(x=>(x.result||'Present')==='Present').forEach(x=>out.push(String(x.abnormality||'')));
+ (m?.fishObservations||[]).filter(x=>x.result==='Positive').forEach(x=>out.push(String(x.target||'')));
+ (m?.mutations||[]).filter(x=>x.result==='Positive'&&x.classification!=='VUS').forEach(x=>{
+   let s=[x.gene,x.protein,x.cdna,x.raw_description].filter(Boolean).join(' ');
+   if(/::|fusion|rearrang/i.test(s))out.push(s)
+ });
+ return out
 }
-function favorableCBF(m){let s=[m.raw?.cyto||'',m.raw?.fish||'',...(m.cytoObservations||[]).map(x=>x.abnormality||''),...(m.fishObservations||[]).filter(x=>x.result==='Positive').map(x=>x.target||'')].join(' ');if(/t\s*\(?8\s*;\s*21|RUNX1.*RUNX1T1/i.test(s))return'RUNX1::RUNX1T1';if(/inv\s*\(?16|t\s*\(?16\s*;\s*16|CBFB.*MYH11/i.test(s))return'CBFB::MYH11';return''}
+function structuredPositiveGeneticText(m){return structuredPositiveGeneticStrings(m).join(' | ')}
+function positiveFusionConcepts(m){
+ let s=structuredPositiveGeneticText(m),hits=[],add=x=>{if(!hits.includes(x))hits.push(x)};
+ if(/t\s*\(\s*8\s*;\s*21\s*\)|RUNX1\s*::\s*RUNX1T1/i.test(s))add('RUNX1::RUNX1T1');
+ if(/inv\s*\(\s*16\s*\)|t\s*\(\s*16\s*;\s*16\s*\)|CBFB\s*::\s*MYH11/i.test(s))add('CBFB::MYH11');
+ if(/t\s*\(\s*9\s*;\s*11\s*\)|MLLT3\s*::\s*KMT2A|KMT2A\s*::\s*MLLT3/i.test(s))add('MLLT3::KMT2A');
+ if(/t\s*\(\s*6\s*;\s*9\s*\)|DEK\s*::\s*NUP214/i.test(s))add('DEK::NUP214');
+ if(/t\s*\(\s*9\s*;\s*22\s*\)|BCR\s*::\s*ABL1/i.test(s))add('BCR::ABL1');
+ if(/t\s*\(\s*8\s*;\s*16\s*\)|KAT6A\s*::\s*CREBBP/i.test(s))add('KAT6A::CREBBP');
+ if(/inv\s*\(\s*3\s*\)|t\s*\(\s*3\s*;\s*3\s*\)|3q26|MECOM.*(?:rearrang|fusion)|(?:rearrang|fusion).*MECOM/i.test(s))add('MECOM rearrangement');
+ if(/11q23|KMT2A.*(?:rearrang|fusion)|(?:rearrang|fusion).*KMT2A/i.test(s)){
+   if(!hits.includes('MLLT3::KMT2A'))add('KMT2A rearrangement')
+ }
+ return hits
+}
+function structuredCytoRiskFeatures(m){
+ let obs=(m?.cytoObservations||[]).filter(x=>(x.result||'Present')==='Present').map(x=>String(x.abnormality||'')),
+     fish=(m?.fishObservations||[]).filter(x=>x.result==='Positive').map(x=>String(x.target||'')),
+     s=[...obs,...fish].join(' | '),fusions=positiveFusionConcepts(m);
+ let structural=obs.filter(x=>/^-?(?:del|add|inv|t|i|idic|der|dup|ins|dic|r)\(/i.test(x)),
+     numeric=obs.filter(x=>/^[-+]\d+$/.test(x)),
+     monos=numeric.filter(x=>/^-(?:[1-9]|1\d|2[0-2])$/.test(x));
+ let recurring=fusions.length>0,onlyHyperdiploid=structural.length===0&&numeric.length>=3&&numeric.every(x=>x.startsWith('+')),
+     complex=!recurring&&obs.length>=3&&structural.length>=1&&!onlyHyperdiploid,
+     cbf=fusions.includes('RUNX1::RUNX1T1')||fusions.includes('CBFB::MYH11'),
+     monosomal=!cbf&&(monos.length>=2||(monos.length>=1&&structural.length>=1));
+ let adverse=[],add=x=>{if(!adverse.includes(x))adverse.push(x)};
+ if(/(?:^|\|)\s*-5(?:\s|\||$)|del\s*\(?5|5q.*del/i.test(s))add('-5/del(5q)');
+ if(/(?:^|\|)\s*-7(?:\s|\||$)|monosomy\s*7/i.test(s))add('-7');
+ if(/(?:^|\|)\s*-17(?:\s|\||$)|17p.*(?:abn|del)|del\s*\(?17/i.test(s))add('-17/abn(17p)');
+ if(complex)add('complex karyotype');
+ if(monosomal)add('monosomal karyotype');
+ ['DEK::NUP214','BCR::ABL1','KAT6A::CREBBP','MECOM rearrangement','KMT2A rearrangement'].forEach(x=>{if(fusions.includes(x))add(x)});
+ return{adverse,complex,monosomal,fusions,obs}
+}
+function favorableCBF(m){
+ let f=positiveFusionConcepts(m);
+ if(f.includes('RUNX1::RUNX1T1'))return'RUNX1::RUNX1T1';
+ if(f.includes('CBFB::MYH11'))return'CBFB::MYH11';
+ return''
+}
+function eln2022Risk(m){
+ if(!m)return{category:'Pending',trace:['No diagnostic BMBx']};
+ let trace=[],cy=structuredCytoRiskFeatures(m),cbf=favorableCBF(m),fusions=cy.fusions;
+ let pos=g=>(m.mutations||[]).some(x=>x.gene===g&&x.result==='Positive'&&x.classification!=='VUS');
+ let advGenes=['ASXL1','BCOR','EZH2','RUNX1','SF3B1','SRSF2','STAG2','U2AF1','ZRSR2'].filter(pos);
+ let npm1=markerStatus(m,'NPM1').status,itd=markerStatus(m,'FLT3-ITD').status;
+ let tp53Rows=(m.mutations||[]).filter(x=>x.gene==='TP53'&&x.result==='Positive'&&x.classification!=='VUS'),
+     tp53Adv=tp53Rows.some(x=>x.vaf!=null&&Number(x.vaf)>=10),
+     tp53UnknownVaf=tp53Rows.some(x=>x.vaf==null);
+ let cebpa=(m.mutations||[]).some(x=>x.gene==='CEBPA'&&x.result==='Positive'&&x.classification!=='VUS'&&/bZIP|basic leucine zipper/i.test([x.protein,x.raw_description].join(' ')));
+
+ if(tp53Adv){trace.push('TP53 pathogenic mutation with VAF ≥10%');trace.push('ELN 2022 adverse criterion applied');return{category:'Adverse',trace}}
+ if(tp53UnknownVaf){trace.push('TP53 pathogenic mutation detected but VAF unavailable');trace.push('Cannot apply ELN 2022 TP53 ≥10% criterion');return{category:'Unable to determine',trace}}
+
+ if(npm1==='Positive'&&cy.adverse.length){
+   trace.push('NPM1 mutation detected');
+   trace.push('Adverse-risk cytogenetic feature(s): '+cy.adverse.join(', '));
+   trace.push('NPM1 + adverse cytogenetics => Adverse');
+   return{category:'Adverse',trace}
+ }
+
+ if(cbf){
+   trace.push('Favorable defining lesion: '+cbf);
+   if(advGenes.length)trace.push('MR-gene mutation(s) do not override favorable-risk AML subtype: '+advGenes.join(', '));
+   return{category:'Favorable',trace}
+ }
+
+ if(cebpa){
+   trace.push('Favorable defining lesion: bZIP in-frame mutated CEBPA');
+   if(advGenes.length)trace.push('MR-gene mutation(s) do not override favorable-risk AML subtype: '+advGenes.join(', '));
+   if(cy.adverse.length){
+     trace.push('Competing adverse cytogenetic feature(s): '+cy.adverse.join(', '));
+     trace.push('Rare competing defining features require review');
+     return{category:'Needs review',trace}
+   }
+   return{category:'Favorable',trace}
+ }
+
+ if(npm1==='Positive'){
+   trace.push('NPM1 mutation detected');
+   if(itd==='Positive'){trace.push('FLT3-ITD detected');return{category:'Intermediate',trace}}
+   if(itd==='Negative'){trace.push('FLT3-ITD explicitly negative');if(advGenes.length)trace.push('MR-gene mutation(s) do not override favorable NPM1 subtype');return{category:'Favorable',trace}}
+   trace.push('FLT3-ITD status unknown');return{category:'Unable to determine',trace}
+ }
+
+ if(fusions.includes('MLLT3::KMT2A')){
+   trace.push('t(9;11)/MLLT3::KMT2A detected');
+   if(advGenes.length)trace.push('t(9;11) takes precedence over rare concurrent adverse-risk gene mutations: '+advGenes.join(', '));
+   return{category:'Intermediate',trace}
+ }
+
+ if(cy.adverse.length){trace.push('Adverse-risk structured cytogenetic/rearrangement feature(s): '+cy.adverse.join(', '));return{category:'Adverse',trace}}
+ if(advGenes.length){trace.push('Adverse MR-gene mutation(s): '+advGenes.join(', '));return{category:'Adverse',trace}}
+ if(itd==='Positive'){trace.push('FLT3-ITD detected without favorable/adverse defining lesion');return{category:'Intermediate',trace}}
+ if(itd==='Unknown'){trace.push('No favorable/adverse defining lesion established');trace.push('FLT3-ITD status unknown');return{category:'Unable to determine',trace}}
+ trace.push('No favorable/adverse defining lesion identified');return{category:'Intermediate',trace}
+}
+function eln2024LIRisk(m){
+ if(!m)return{category:'Pending',trace:['No diagnostic BMBx']};
+ let trace=[];
+ if(D.base.phma==='Yes'){trace.push('Prior HMA exposure documented');trace.push('2024 ELN Less-Intensive is not applicable');return{category:'Not applicable',trace}}
+ let tp53=markerStatus(m,'TP53').status,itd=markerStatus(m,'FLT3-ITD').status,nr=markerStatus(m,'NRAS').status,kr=markerStatus(m,'KRAS').status,ddx41=markerStatus(m,'DDX41').status;
+ if(tp53==='Positive'){trace.push('TP53 mutated');return{category:'Adverse',trace}}
+ if(tp53==='Unknown'){trace.push('TP53 status unknown');return{category:'Unable to determine',trace}}
+ if(ddx41==='Positive'){trace.push('DDX41 mutated');trace.push('TP53 wild-type/negative');return{category:'Favorable',trace}}
+ let sig=[['FLT3-ITD',itd],['NRAS',nr],['KRAS',kr]],positive=sig.filter(x=>x[1]==='Positive').map(x=>x[0]),unknown=sig.filter(x=>x[1]==='Unknown').map(x=>x[0]);
+ trace.push('TP53 wild-type/negative');
+ if(positive.length){trace.push('Activating signaling alteration(s): '+positive.join(', '));return{category:'Intermediate',trace}}
+ if(unknown.length){trace.push('Required signaling status unknown: '+unknown.join(', '));return{category:'Unable to determine',trace}}
+ trace.push('FLT3-ITD, NRAS, and KRAS all explicitly negative');return{category:'Favorable',trace}
+}
 function eln(){
- let m=D.marrows.find(x=>x.diagnostic);if(!m)return['Pending','No diagnostic BMBx','Pending','No diagnostic BMBx'];
- let pos=g=>(m.mutations||[]).some(x=>x.gene===g&&x.result==='Positive'&&x.classification!=='VUS'),advGenes=['ASXL1','BCOR','EZH2','RUNX1','SF3B1','SRSF2','STAG2','U2AF1','ZRSR2'].filter(pos);
- let tp53=markerStatus(m,'TP53').status,itd=markerStatus(m,'FLT3-ITD').status,npm1=markerStatus(m,'NPM1').status,cy=eln2022AdverseCytogenetics(m),cbf=favorableCBF(m);
- let tp53Rows=(m.mutations||[]).filter(x=>x.gene==='TP53'&&x.result==='Positive'&&x.classification!=='VUS'),tp53Adv=tp53Rows.some(x=>x.vaf!=null&&Number(x.vaf)>=10),tp53VafUnknown=tp53Rows.some(x=>x.vaf==null);
- let cebpa=(m.mutations||[]).some(x=>x.gene==='CEBPA'&&x.result==='Positive'&&/bZIP|basic leucine zipper/i.test([x.protein,x.raw_description].join(' ')));
- let e22='Unable to determine',w22='Insufficient structured genetics';
- if(cbf){e22='Favorable';w22=cbf}
- else if(cebpa){e22='Favorable';w22='CEBPA bZIP in-frame mutation detected'}
- else if(tp53Adv||cy.length){e22='Adverse';w22=[tp53Adv?'TP53 mutation VAF ≥10%':'',...cy].filter(Boolean).join(' · ')}
- else if(tp53==='Positive'&&tp53VafUnknown){e22='Unable to determine';w22='TP53 mutation detected but VAF unavailable for ELN 2022 ≥10% criterion'}
- else if(npm1==='Positive'){if(itd==='Positive'){e22='Intermediate';w22='NPM1-mutated with FLT3-ITD'}else if(itd==='Negative'){e22='Favorable';w22='NPM1-mutated without FLT3-ITD'}else w22='NPM1 detected; FLT3-ITD status unknown'}
- else if(advGenes.length){e22='Adverse';w22='MR-gene mutation(s): '+advGenes.join(', ')}
- else if(itd==='Positive'){e22='Intermediate';w22='FLT3-ITD detected'}
- else {let s=[m.raw?.cyto,m.raw?.fish].join(' ');if(/t\s*\(?9\s*;\s*11|KMT2A.*MLLT3|MLLT3.*KMT2A/i.test(s)){e22='Intermediate';w22='t(9;11)/KMT2A::MLLT3'}else if(deriveCytogenetics(m).category!=='Unknown'&&(m.mutations||[]).length){e22='Intermediate';w22='No favorable/adverse defining abnormality identified'}}
- let e24='Unable to determine',w24='Insufficient structured genetics';
- if(D.base.phma==='Yes'){e24='Not applicable';w24='2024 ELN Less-Intensive does not apply after prior HMA exposure'}
- else{let nr=markerStatus(m,'NRAS').status,kr=markerStatus(m,'KRAS').status;if(tp53==='Positive'){e24='Adverse';w24='TP53 mutation'}else if(pos('DDX41')){e24='Favorable';w24='DDX41 mutation'}else if(tp53==='Negative'&&[itd,nr,kr].some(x=>x==='Positive')){e24='Intermediate';w24='FLT3-ITD and/or NRAS/KRAS mutation with TP53 wild-type'}else if(tp53==='Negative'&&[itd,nr,kr].every(x=>x==='Negative')){e24='Favorable';w24='TP53 wild-type with FLT3-ITD, NRAS and KRAS negative'}else{let miss=[['TP53',tp53],['FLT3-ITD',itd],['NRAS',nr],['KRAS',kr]].filter(x=>x[1]==='Unknown').map(x=>x[0]);w24='Required status unknown: '+miss.join(', ')}}
- return[e22,w22,e24,w24]
+ let m=D.marrows.find(x=>x.diagnostic),r22=eln2022Risk(m),r24=eln2024LIRisk(m);
+ return[r22.category,r22.trace.join('\n'),r24.category,r24.trace.join('\n')]
 }
 
 function problems(){
@@ -1342,7 +1441,7 @@ function render(){
  <div class="row two"><div class=metric>Blasts<b>${bt}</b><span class=small>${escHtml(pb.source)}</span></div><div class=metric>Genomic / cytogenetic summary<div style="margin-top:7px;line-height:1.9">${marrowBiologySummary(m)}</div></div></div>
  <div class="row two" style="margin-top:8px"><div class=metric>Calculated response<b>${escHtml(resp)}</b></div>${m.diagnostic?'':`<div class=metric>MRD<b>${escHtml(m.mrd||'Unknown')}</b><span class=small>${m.mrdValuePct!=null?m.mrdValuePct+'% · ':''}${escHtml((m.mrdMethods||[]).join(' + ')||'Method not recorded')}${m.mrdLOD!=null?' · LOD '+m.mrdLOD+'%':''}${m.mrdLab&&m.mrdLab!=='Unknown'?' · '+escHtml(m.mrdLab):''}</span></div>`}</div>
  <div class="mutedbox" style="margin-top:8px"><div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap"><div style="min-width:180px"><label>Peripheral blood blasts</label><select onchange="setMarrowAssessment(${i},'pb',this.value)"><option ${m.pb==='Unknown'||!m.pb?'selected':''}>Unknown</option><option ${m.pb==='Absent'?'selected':''}>Absent</option><option ${m.pb==='Present'?'selected':''}>Present</option></select>${m.pbBlastPct!=null?`<span class=small>${m.pbBlastPct}% reported</span>`:''}</div><div style="min-width:180px"><label>Extramedullary disease</label><select onchange="setMarrowAssessment(${i},'emd',this.value)"><option ${m.emd==='Unknown'||!m.emd?'selected':''}>Unknown</option><option value="Absent/resolved" ${m.emd==='Absent/resolved'?'selected':''}>Absent / resolved</option><option ${m.emd==='Present'?'selected':''}>Present</option></select></div>${m.diagnostic?'':`<div style="flex:1"><b>Response readiness:</b> ${ready.state==='Complete'?'<span class="pill ok">Complete</span>':`<span class="pill warn">Incomplete</span> <span class=small>${escHtml(ready.missing.join(', '))}</span>`}</div>`}</div></div>
- <details><summary>Blast-source details</summary><table><tr><th>Source</th><th>Value</th></tr><tr><td>Aspirate/manual differential</td><td>${m.blastAspirate??'—'}${m.blastAspirate!=null?'%':''} · ${escHtml(m.aspirateAdequacy||'Unknown adequacy')}</td></tr><tr><td>Core/IHC</td><td>${m.blastIhcLow!=null?(m.blastIhcLow===m.blastIhcHigh?m.blastIhcLow:m.blastIhcLow+'–'+m.blastIhcHigh)+'%':'—'}</td></tr><tr><td>Flow crosscheck</td><td>${m.blastFlow??'—'}${m.blastFlow!=null?'%':''}</td></tr></table></details>
+ <details><summary>Blast-source details</summary><table><tr><th>Source</th><th>Value</th></tr><tr><td>Aspirate/manual differential</td><td>${m.blastAspirate??'—'}${m.blastAspirate!=null?'%':''} · ${escHtml(m.aspirateAdequacy||'Unknown adequacy')}</td></tr><tr><td>Core/IHC</td><td>${m.blastIhcLow!=null?(m.blastIhcLow===m.blastIhcHigh?m.blastIhcLow:m.blastIhcLow+'–'+m.blastIhcHigh)+'%':'—'}</td></tr><tr><td>Flow cytometry</td><td>${m.blastFlow??'—'}${m.blastFlow!=null?'%':''}</td></tr></table></details>
  ${rb}
  <div class="mutedbox" style="margin-top:10px"><b>BMBx assessment details</b><br><span class=small>PB blasts: <b>${escHtml(m.pb||'Unknown')}</b>${m.pbBlastPct!=null?' ('+m.pbBlastPct+'%)':''} · EMD: <b>${escHtml(m.emd||'Unknown')}</b>${m.diagnostic?'':` · MRD: <b>${escHtml(m.mrd||'Unknown')}</b>${m.mrdValuePct!=null?' · '+m.mrdValuePct+'%':''}`}</span>${m.manualNotes?`<div class=small style="margin-top:6px"><b>Note:</b> ${escHtml(m.manualNotes)}</div>`:''}</div>
  <details><summary>Parsed flow/genetics details</summary><p><b>Blast immunophenotype</b><br>${(m.flow||[]).map(x=>`<span class="pill ${x.result==='Positive'?'flowpos':x.result==='Negative'?'flowneg':'neutral'}">${flowDisplay(x)}</span>`).join(' ')||'<span class=small>Blast immunophenotype not confidently extracted.</span>'}</p><p><b>NGS</b><br>${(m.mutations||[]).map(x=>`<span class="pill ${x.classification==='VUS'?'ngsvus':x.result==='Positive'?'ngspos':'ngsneg'}">${x.result==='Negative'?escHtml(x.gene+' Negative'):variantDisplay(x)}</span>`).join(' ')||'<span class=small>No structured NGS observations.</span>'}</p><p><b>Conventional cytogenetics</b><br>${cytoDescriptorChips(m).map(x=>`<span class="pill neutral">${escHtml(x)}</span>`).join(' ')} ${(m.cytoObservations||[]).map(x=>`<span class="pill neutral">${escHtml(x.abnormality)}</span>`).join(' ')}</p><p><b>FISH</b><br>${(m.fishObservations||[]).map(x=>`<span class="pill ${x.result==='Positive'?'fishpos':'fishneg'}">${escHtml(x.target+' '+x.result)}</span>`).join(' ')}</p></details>
@@ -1352,7 +1451,7 @@ function render(){
  $('cbctable').innerHTML=D.cbc.length?`<table><tr><th>Date/time</th><th>Dx day</th><th>ANC</th><th>ANC source</th><th>Platelets</th><th>Source</th><th></th></tr>${D.cbc.map((x,i)=>`<tr><td>${displayDate(x.date)} ${x.timestamp.slice(11,16)}</td><td>${dxday(x.date)}</td><td>${x.anc??''}</td><td>${x.anc_source||''}</td><td>${x.plt??''}</td><td>${x.source||''}</td><td><button class="btn alt" onclick="editCBC(${i})">Edit</button> <button class="btn danger" onclick="delCBC(${i})">Delete</button></td></tr>`).join('')}</table>`:'<p class=help>No confirmed CBC data.</p>';
 
  let dm=D.marrows.find(x=>x.diagnostic);if(dm){D.base.dx_auto=dm.date;if(!D.base.dx||!D.base.dx_overridden)D.base.dx=dm.date}let e=eln(),bp=dm?preferredBlast(dm):{value:null,source:''};
- if($('markerStatusCard')){let keys=['NPM1','FLT3-ITD','FLT3-TKD','IDH1','IDH2','NRAS','KRAS','KMT2A','TP53'];$('markerStatusCard').innerHTML=`<table><tr><th>Marker</th><th>Status</th><th>Evidence</th><th>Override</th></tr>${keys.map(k=>{let s=markerStatus(dm,k),o=D.base.marker_overrides?.[k]||'Automatic';return `<tr><td><b>${k}</b></td><td>${s.status}</td><td class=small>${escHtml(s.evidence)}</td><td><select onchange="setMarkerOverride('${k}',this.value)"><option ${o==='Automatic'?'selected':''}>Automatic</option><option ${o==='Positive'?'selected':''}>Positive</option><option ${o==='Negative'?'selected':''}>Negative</option><option ${o==='Unknown'?'selected':''}>Unknown</option></select></td></tr>`}).join('')}</table>`}
+ if($('markerStatusCard')){let keys=['NPM1','FLT3-ITD','FLT3-TKD','IDH1','IDH2','NRAS','KRAS','DDX41','KMT2A','TP53'];$('markerStatusCard').innerHTML=`<table><tr><th>Marker</th><th>Status</th><th>Evidence</th><th>Override</th></tr>${keys.map(k=>{let s=markerStatus(dm,k),o=D.base.marker_overrides?.[k]||'Automatic';return `<tr><td><b>${k}</b></td><td>${s.status}</td><td class=small>${escHtml(s.evidence)}</td><td><select onchange="setMarkerOverride('${k}',this.value)"><option ${o==='Automatic'?'selected':''}>Automatic</option><option ${o==='Positive'?'selected':''}>Positive</option><option ${o==='Negative'?'selected':''}>Negative</option><option ${o==='Unknown'?'selected':''}>Unknown</option></select></td></tr>`}).join('')}</table>`}
 
  $('bb').textContent=bp.value!=null?bp.value+'%':'—';$('bbsrc').textContent=bp.source;$('e22').textContent=e[0];$('e22w').textContent=e[1];$('e24').textContent=e[2];$('e24w').textContent=e[3];
 
@@ -1387,7 +1486,7 @@ function render(){
  ev.sort((a,b)=>a[0].localeCompare(b[0]));$('tl').innerHTML=ev.map(x=>`<div class=event><b>${displayDate(x[0])}</b><div>${x[1]}</div></div>`).join('')||'<p class=help>No dated events.</p>'
 }
 function dl(n,t,type='text/plain'){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type}));a.download=n;a.click()}
-function jsonOut(){dl((D.base.study||'AML-demo')+'_V3.0.json',JSON.stringify(D,null,2),'application/json')}
+function jsonOut(){dl((D.base.study||'AML-demo')+'_V3.1.json',JSON.stringify(D,null,2),'application/json')}
 function csv(rows){if(!rows.length)return'';let k=[...new Set(rows.flatMap(Object.keys))];return[k.join(','),...rows.map(r=>k.map(x=>`"${String(r[x]??'').replaceAll('"','""')}"`).join(','))].join('\n')}
 function csvOut(k){
  let r=k==='cycles'?D.cycles.map(x=>({study_id:D.base.study,...x})):
