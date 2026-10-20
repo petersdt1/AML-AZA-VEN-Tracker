@@ -1,31 +1,29 @@
-# V4.1 Regression Checklist
+# V4.2 Regression Checklist
 
-## Reset / CBC
-- Clear Current Patient Data removes current and fallback local-storage keys.
-- Delete All CBC Observations affects only CBC Trend and requires confirmation.
+## BMBx card
+- Top summary shows Blasts, Cytogenetic / Molecular Summary, Calculated response.
+- BMBx Assessment contains marrow date, diagnostic/baseline, PB blasts, EMD, best ANC, best platelet, response window, response readiness.
+- Assessment Edit occurs in place.
+- Best ANC and best platelet remain independently selectable.
+- G-CSF / platelet transfusion context remains editable.
+- BMBx Data Details is permanently visible and does not collapse when a child editor opens.
+- Individual in-place editors: Blast Enumeration, Blast Immunophenotype, NGS, Conventional Cytogenetics, FISH, MRD.
+- Edit all BMBx fields expands all in-place editors.
+- No separate full-BMBx editor is launched from the BMBx card.
 
-## Smart Import
-- Labels read Date (optional), Source (optional), Diagnostic BMBx.
-- Four-domain staging still works.
-- Partial acceptance preserves remaining staged records.
-- Duplicate cycle/BMBx/ancillary/CBC acceptance prompts UPDATE / ADD / CANCEL.
+## MRD
+- MRD tile exists on diagnostic marrow and reads N/A — diagnostic marrow.
+- Diagnostic MRD editor confirms Not applicable.
+- Post-treatment MRD supports Flow cytometry, NGS, Molecular PCR/qPCR, Other.
+- Flow stores abnormal-population result / LOD / phenotype.
+- NGS stores variant-level target(s) / VAF / LOD.
+- PCR/qPCR stores target / method / value / units / LOD.
+- MRD summary refreshes after save.
+- Show raw data remains available when raw source exists.
 
-## BMBx
-- Each BMBx Data Details tile always shows its concise overview.
-- Edit opens only that domain editor in place.
-- Show raw data is independently expandable per domain.
-- Full Edit BMBx remains available.
-- Needs review and provenance are visible.
-- Response CBC recovery and response color coding remain intact.
-
-## Ancillary Studies
-- Date → Specimen → Assay.
-- Assay-specific structured forms for Flow, NGS, FISH, Cytogenetics, Molecular MRD / PCR.
-- Molecular target dropdown includes NPM1, RUNX1::RUNX1T1, CBFB::MYH11, PML::RARA, FLT3-ITD, FLT3-TKD, BCR::ABL1, KMT2A::MLLT3, DEK::NUP214, IDH1, IDH2, WT1, Other.
-- Raw source remains available.
-- Positive CSF prompts CNS review.
-- Positive pleural/ascitic/other-fluid study prompts possible EMD review.
-
-## Timeline
-- Existing domain color coding retained.
-- No extra tiny text label added.
+## Regression
+- V4.1 Smart Import four-domain staging preserved.
+- Ancillary Studies dynamic assay editors preserved.
+- CBC Delete All preserved.
+- Clear Current Patient Data preserved.
+- Timeline color coding preserved.

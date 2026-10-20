@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AML AZA/VEN Tracker V4.1</title>
+<title>AML AZA/VEN Tracker V4.2</title>
 <style>
 :root{
   --bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#667085;--line:#dde3ec;
@@ -96,10 +96,20 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 .anc-assay-editor{margin-top:10px;border:1px solid var(--line);border-radius:9px;padding:11px;background:#fbfcfe}
 .molecular-target-other{margin-top:8px}
 
+
+.bmbx-assessment{margin-top:8px;border:1px solid var(--line);border-radius:9px;padding:11px;background:#fafcfe}
+.bmbx-assessment-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}
+.bmbx-assessment-grid{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:9px}
+.bmbx-assessment-item{padding:8px;border:1px solid var(--line);border-radius:7px;background:#fff}
+.bmbx-assessment-item b{display:block;font-size:14px;margin-top:3px}
+.bmbx-data-title{font-size:15px;font-weight:700;margin:14px 0 7px}
+.mrd-method-box{margin-top:8px;padding:9px;border:1px solid var(--line);border-radius:7px;background:#fbfcfe}
+@media(max-width:850px){.bmbx-assessment-grid{grid-template-columns:1fr 1fr}}
+
 </style>
 </head>
 <body>
-<header><h1>AML AZA/VEN Longitudinal Tracker V4.1</h1><div class="sub" id="hdr">No patient selected</div></header>
+<header><h1>AML AZA/VEN Longitudinal Tracker V4.2</h1><div class="sub" id="hdr">No patient selected</div></header>
 <div class="demo"><b>DEMO / FAKE DATA ONLY.</b> Static GitHub prototype. Do not enter names, MRNs, DOBs, or PHI.</div>
 <div class="wrap"><div class="layout">
 <nav>
@@ -315,8 +325,8 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 </main></div></div>
 
 <script>
-const K='AML_AV_V41';
-let D=JSON.parse(localStorage.getItem(K)||localStorage.getItem('AML_AV_V40')||localStorage.getItem('AML_AV_V32')||localStorage.getItem('AML_AV_V31')||localStorage.getItem('AML_AV_V30')||localStorage.getItem('AML_AV_V210')||'null')||{
+const K='AML_AV_V42';
+let D=JSON.parse(localStorage.getItem(K)||localStorage.getItem('AML_AV_V41')||localStorage.getItem('AML_AV_V40')||localStorage.getItem('AML_AV_V32')||localStorage.getItem('AML_AV_V31')||localStorage.getItem('AML_AV_V30')||localStorage.getItem('AML_AV_V210')||'null')||{
   base:{cns_status:'Unknown',cns_date:'',cns_basis:''},cycles:[],marrows:[],ancillary:[],cbc:[],
   out:{relapse_date_auto:'',relapse_date_final:'',relapse_basis:'',relapse_overridden:false},
   audit:[]
@@ -1351,6 +1361,138 @@ function setManualCounts(i){
 
 
 
+
+const inlineBmbxAssessmentState=new Set();
+
+function toggleBmbxAssessmentEditor(i){
+  let id=D.marrows[i]?.id;if(!id)return;
+  if(inlineBmbxAssessmentState.has(id))inlineBmbxAssessmentState.delete(id);else inlineBmbxAssessmentState.add(id);
+  openBmbxCards.add(id);render()
+}
+function allBmbxEditorsOpen(m){
+  return inlineBmbxAssessmentState.has(m.id)&&['blast','flow','ngs','cyto','fish','mrd'].every(d=>inlineBmbxEditState.get(m.id+'|'+d))
+}
+function toggleAllBmbxEditors(i){
+  let m=D.marrows[i];if(!m)return;let open=!allBmbxEditorsOpen(m);
+  if(open)inlineBmbxAssessmentState.add(m.id);else inlineBmbxAssessmentState.delete(m.id);
+  ['blast','flow','ngs','cyto','fish','mrd'].forEach(d=>{let k=m.id+'|'+d;if(open)inlineBmbxEditState.set(k,true);else inlineBmbxEditState.delete(k)});
+  openBmbxCards.add(m.id);render()
+}
+function bmbxAssessmentEditor(m,i,r,ready){
+  let diagnostic=!!m.diagnostic;
+  return `<div class=inline-domain-editor>
+    <div class=row>
+      <div><label>Marrow date</label><input class=iba-date type=text value="${m.date?displayDate(m.date):''}" placeholder="MM/DD/YYYY"></div>
+      <div class=inline-check><input class=iba-dx type=checkbox style="width:auto" ${diagnostic?'checked':''}><label style="margin:0">Diagnostic / baseline</label></div>
+      <div><label>Peripheral blood blasts</label><select class=iba-pb><option ${(!m.pb||m.pb==='Unknown')?'selected':''}>Unknown</option><option ${m.pb==='Absent'?'selected':''}>Absent</option><option ${m.pb==='Present'?'selected':''}>Present</option></select></div>
+      <div><label>PB blast % (optional)</label><input class=iba-pbpct type=number step=.1 value="${m.pbBlastPct??''}"></div>
+    </div>
+    <div class=row>
+      <div><label>Extramedullary disease</label><select class=iba-emd><option ${(!m.emd||m.emd==='Unknown')?'selected':''}>Unknown</option><option value="Absent/resolved" ${m.emd==='Absent/resolved'?'selected':''}>Absent / resolved</option><option ${m.emd==='Present'?'selected':''}>Present</option></select></div>
+      <div><label>Best ANC response</label><select class=iba-anc ${diagnostic?'disabled':''}>${diagnostic?'<option>N/A — diagnostic marrow</option>':responseCBCOptions(m,'anc')}</select></div>
+      <div><label>Best platelet response</label><select class=iba-plt ${diagnostic?'disabled':''}>${diagnostic?'<option>N/A — diagnostic marrow</option>':responseCBCOptions(m,'plt')}</select></div>
+      <div><label>Response readiness</label><input disabled value="${diagnostic?'Not response-evaluable':escHtml(ready.state==='Complete'?'Complete':'Incomplete: '+ready.missing.join(', '))}"></div>
+    </div>
+    ${diagnostic?'':`<div class=row two>
+      <div><label>G-CSF within prior 7 days of ANC response</label><select class=iba-gcsf><option ${(!m.ancGcsf7d||m.ancGcsf7d==='Unknown')?'selected':''}>Unknown</option><option ${m.ancGcsf7d==='No'?'selected':''}>No</option><option ${m.ancGcsf7d==='Yes'?'selected':''}>Yes</option></select></div>
+      <div><label>Platelet transfusion within prior 7 days</label><select class=iba-plttx><option ${(!m.pltTx7d||m.pltTx7d==='Unknown')?'selected':''}>Unknown</option><option ${m.pltTx7d==='No'?'selected':''}>No</option><option ${m.pltTx7d==='Yes'?'selected':''}>Yes</option></select></div>
+    </div>
+    <div class=small><b>Response window:</b> ${displayDate(m.date)} → ${displayDate(r.end)} · ${r.mode==='provisional'?'provisional':'finalized boundary'}</div>`}
+    <div class=actions><button class=btn onclick="saveBmbxAssessment(${i},this)">Save assessment</button><button class="btn alt" onclick="toggleBmbxAssessmentEditor(${i})">Cancel</button></div>
+  </div>`
+}
+function saveBmbxAssessment(i,btn){
+  let m=D.marrows[i],ed=btn.closest('.inline-domain-editor'),dateRaw=ed.querySelector('.iba-date').value.trim();
+  let date=normalizeDateText(dateRaw,'BMBx date');if(!date)return;
+  let wasDx=!!m.diagnostic,newDx=ed.querySelector('.iba-dx').checked;
+  m.date=date;m.diagnostic=newDx;m.pb=ed.querySelector('.iba-pb').value;m.pbBlastPct=ed.querySelector('.iba-pbpct').value===''?null:Number(ed.querySelector('.iba-pbpct').value);m.emd=ed.querySelector('.iba-emd').value;
+  if(!newDx){
+    m.selectedAncTs=ed.querySelector('.iba-anc').value||'';m.manualAnc=null;m.manualAncDate='';
+    m.selectedPltTs=ed.querySelector('.iba-plt').value||'';m.manualPlt=null;m.manualPltDate='';
+    m.ancGcsf7d=ed.querySelector('.iba-gcsf').value;m.pltTx7d=ed.querySelector('.iba-plttx').value;
+  }
+  if(newDx){
+    D.marrows.forEach(x=>{if(x.id!==m.id)x.diagnostic=false});
+    m.mrdAssessed='Not applicable';m.mrd='';syncDxFromDiagnostic(m.date)
+  }else if(wasDx&&!newDx){
+    if(m.mrdAssessed==='Not applicable')m.mrdAssessed='Unknown'
+  }
+  inlineBmbxAssessmentState.delete(m.id);openBmbxCards.add(m.id);chronologySort();save()
+}
+function mrdPrimaryMethod(m){
+  if(m?.mrdDetails?.method)return m.mrdDetails.method;
+  let a=m?.mrdMethods||[];
+  if(a.includes('Flow cytometry')||a.includes('MFC'))return'Flow cytometry';
+  if(a.includes('NGS'))return'NGS';
+  if(a.includes('PCR')||a.includes('qPCR'))return'Molecular PCR/qPCR';
+  if(a.length)return a[0];
+  return'Flow cytometry'
+}
+function mrdPreview(m){
+  if(m.diagnostic)return'N/A — diagnostic marrow';
+  if(m.mrdAssessed==='No')return'Not performed';
+  if(!m.mrdAssessed||m.mrdAssessed==='Unknown')return'Unknown / not yet adjudicated';
+  if(m.mrdAssessed==='Not applicable')return'Not applicable';
+  let method=mrdPrimaryMethod(m),parts=[m.mrd||'Unknown',method];
+  if(method==='NGS'&&m.mrdDetails?.ngs?.mutations?.length)parts.push(m.mrdDetails.ngs.mutations.map(variantDisplay).join(' · '));
+  else if(method==='Flow cytometry'&&m.mrdDetails?.flow?.abnormalPct!==''&&m.mrdDetails?.flow?.abnormalPct!=null)parts.push(m.mrdDetails.flow.abnormalPct+'%');
+  else if(m.mrdTarget)parts.push(m.mrdTarget);
+  if(m.mrdValuePct!=null&&!parts.some(x=>String(x).includes(m.mrdValuePct+'%')))parts.push(m.mrdValuePct+'%');
+  if(m.mrdLOD!=null)parts.push('LOD '+m.mrdLOD+'%');
+  return parts.filter(Boolean).join(' · ')
+}
+function inlineMRDEditor(m,i){
+  if(m.diagnostic)return `<div class=inline-domain-editor><div class=info><b>MRD: N/A</b><div class=small>Diagnostic / baseline marrow is retained in the MRD schema but is not scored as a post-treatment MRD assessment.</div></div><div class=actions><button class=btn onclick="saveDiagnosticMRD(${i})">Confirm N/A</button><button class="btn alt" onclick="toggleInlineBmbxEditor(${i},'mrd')">Cancel</button></div></div>`;
+  let assessed=m.mrdAssessed||'Unknown',method=mrdPrimaryMethod(m),det=m.mrdDetails||{},flow=det.flow||{},ngs=det.ngs||{},mol=det.molecular||{};
+  return `<div class=inline-domain-editor>
+    <div class=row>
+      <div><label>MRD assessed?</label><select class=im-assessed onchange="refreshInlineMRDMethod(this)">${['Yes','No','Unknown','Not applicable'].map(x=>`<option ${assessed===x?'selected':''}>${x}</option>`).join('')}</select></div>
+      <div><label>Primary MRD method</label><select class=im-method onchange="refreshInlineMRDMethod(this)">${['Flow cytometry','NGS','Molecular PCR/qPCR','Other'].map(x=>`<option ${method===x?'selected':''}>${x}</option>`).join('')}</select></div>
+      <div><label>MRD status</label><select class=im-status>${['Unknown','Negative','Positive','Indeterminate','Not performed'].map(x=>`<option ${m.mrd===x?'selected':''}>${x}</option>`).join('')}</select></div>
+      <div><label>Laboratory</label><select class=im-lab>${['Unknown','Local','Central'].map(x=>`<option ${m.mrdLab===x?'selected':''}>${x}</option>`).join('')}</select></div>
+    </div>
+    <div class=im-method-fields>
+      <div class="mrd-method-box im-flow-box" style="${method==='Flow cytometry'?'':'display:none'}"><b>Flow cytometry MRD</b><div class=row><div><label>Abnormal population %</label><input class=im-flowpct type=number step=.0001 value="${flow.abnormalPct??m.mrdValuePct??''}"></div><div><label>LOD / sensitivity %</label><input class=im-flowlod type=number step=.0001 value="${flow.lod??m.mrdLOD??''}"></div></div><label>Phenotype / target summary</label><textarea class="notes im-flowphen">${escHtml(flow.phenotype||m.mrdTarget||'')}</textarea></div>
+      <div class="mrd-method-box im-ngs-box" style="${method==='NGS'?'':'display:none'}"><b>NGS MRD</b><div class=im-ngsrows>${(ngs.mutations||[]).map(x=>`<div class="srow" style="display:grid;grid-template-columns:1fr 1.2fr .7fr 1.1fr;gap:7px;margin-bottom:6px"><div><label>Gene</label><input class=imn-gene value="${escHtml(x.gene||'')}"></div><div><label>Protein / variant</label><input class=imn-protein value="${escHtml(x.protein||'')}"></div><div><label>VAF %</label><input class=imn-vaf type=number step=.0001 value="${x.vaf??''}"></div><div><label>Classification</label><select class=imn-class>${['Pathogenic','Likely pathogenic','VUS','Reported'].map(v=>`<option ${x.classification===v?'selected':''}>${v}</option>`).join('')}</select></div></div>`).join('')}</div><button class="btn alt" onclick="addInlineMRDNGSRow(this)">+ Add variant</button><div class=row><div><label>Assay LOD / sensitivity %</label><input class=im-ngslod type=number step=.0001 value="${ngs.lod??m.mrdLOD??''}"></div></div></div>
+      <div class="mrd-method-box im-mol-box" style="${method==='Molecular PCR/qPCR'?'':'display:none'}"><b>Molecular PCR/qPCR MRD</b><div class=row><div><label>Target</label><select class=im-moltarget>${molecularTargetOptions(mol.target||m.mrdTarget||'NPM1')}</select></div><div><label>Method</label><select class=im-molmethod>${['qPCR','dPCR','PCR','Other'].map(v=>`<option ${mol.method===v?'selected':''}>${v}</option>`).join('')}</select></div><div><label>Quantitative value</label><input class=im-molvalue value="${escHtml(mol.value??m.mrdValuePct??'')}"></div><div><label>Units</label><input class=im-molunits value="${escHtml(mol.units||'%')}"></div></div><div class=row><div><label>LOD / sensitivity</label><input class=im-mollod value="${escHtml(mol.lod??m.mrdLOD??'')}"></div></div></div>
+      <div class="mrd-method-box im-other-box" style="${method==='Other'?'':'display:none'}"><b>Other MRD method</b><div class=row two><div><label>Method / target</label><input class=im-other value="${escHtml(m.mrdOther||m.mrdTarget||'')}"></div><div><label>Numeric result %</label><input class=im-othervalue type=number step=.0001 value="${m.mrdValuePct??''}"></div></div></div>
+    </div>
+    <div class=actions><button class=btn onclick="saveInlineBmbxMRD(${i},this)">Save MRD</button><button class="btn alt" onclick="toggleInlineBmbxEditor(${i},'mrd')">Cancel</button></div>
+  </div>`
+}
+function refreshInlineMRDMethod(el){
+  let ed=el.closest('.inline-domain-editor'),assessed=ed.querySelector('.im-assessed').value,method=ed.querySelector('.im-method').value,show=assessed==='Yes';
+  ed.querySelectorAll('.mrd-method-box').forEach(x=>x.style.display='none');
+  if(show){
+    let cls=method==='Flow cytometry'?'.im-flow-box':method==='NGS'?'.im-ngs-box':method==='Molecular PCR/qPCR'?'.im-mol-box':'.im-other-box';
+    ed.querySelector(cls).style.display='block'
+  }
+}
+function addInlineMRDNGSRow(btn){
+  btn.closest('.inline-domain-editor').querySelector('.im-ngsrows').insertAdjacentHTML('beforeend',`<div class="srow" style="display:grid;grid-template-columns:1fr 1.2fr .7fr 1.1fr;gap:7px;margin-bottom:6px"><div><label>Gene</label><input class=imn-gene></div><div><label>Protein / variant</label><input class=imn-protein></div><div><label>VAF %</label><input class=imn-vaf type=number step=.0001></div><div><label>Classification</label><select class=imn-class><option>Pathogenic</option><option>Likely pathogenic</option><option>VUS</option><option>Reported</option></select></div></div>`)
+}
+function saveDiagnosticMRD(i){
+  let m=D.marrows[i];m.mrdAssessed='Not applicable';m.mrd='';m.mrdMethods=[];m.mrdValuePct=null;m.mrdLOD=null;m.mrdSpecimen='Bone marrow';m.mrdLab=m.mrdLab||'Unknown';
+  markDomainReviewed(m,'mrd');inlineBmbxEditState.delete(m.id+'|mrd');openBmbxCards.add(m.id);save()
+}
+function saveInlineBmbxMRD(i,btn){
+  let m=D.marrows[i],ed=btn.closest('.inline-domain-editor'),assessed=ed.querySelector('.im-assessed').value,method=ed.querySelector('.im-method').value,status=ed.querySelector('.im-status').value;
+  m.mrdAssessed=assessed;m.mrd=assessed==='Yes'?status:(assessed==='No'?'Not performed':'Unknown');m.mrdSpecimen='Bone marrow';m.mrdLab=ed.querySelector('.im-lab').value;m.mrdMethods=assessed==='Yes'?[method]:[];m.mrdDetails={method};
+  if(assessed==='Yes'&&method==='Flow cytometry'){
+    let pct=ed.querySelector('.im-flowpct').value,lod=ed.querySelector('.im-flowlod').value,phen=ed.querySelector('.im-flowphen').value.trim();
+    m.mrdDetails.flow={abnormalPct:pct===''?null:Number(pct),lod:lod===''?null:Number(lod),phenotype:phen};m.mrdTarget=phen;m.mrdValuePct=pct===''?null:Number(pct);m.mrdLOD=lod===''?null:Number(lod);m.mrdOther=''
+  }else if(assessed==='Yes'&&method==='NGS'){
+    let muts=[...ed.querySelectorAll('.im-ngsrows .srow')].map(r=>({gene:r.querySelector('.imn-gene').value.trim().toUpperCase(),protein:r.querySelector('.imn-protein').value.trim(),vaf:r.querySelector('.imn-vaf').value===''?null:Number(r.querySelector('.imn-vaf').value),classification:r.querySelector('.imn-class').value,result:'Positive'})).filter(x=>x.gene),lod=ed.querySelector('.im-ngslod').value;
+    m.mrdDetails.ngs={mutations:muts,lod:lod===''?null:Number(lod)};m.mrdTarget=muts.map(x=>x.gene).join(', ');m.mrdValuePct=muts.length===1?muts[0].vaf:null;m.mrdLOD=lod===''?null:Number(lod);m.mrdOther=''
+  }else if(assessed==='Yes'&&method==='Molecular PCR/qPCR'){
+    let target=ed.querySelector('.im-moltarget').value,methodName=ed.querySelector('.im-molmethod').value,value=ed.querySelector('.im-molvalue').value,units=ed.querySelector('.im-molunits').value,lod=ed.querySelector('.im-mollod').value;
+    m.mrdDetails.molecular={target,method:methodName,value,units,lod};m.mrdTarget=target;m.mrdValuePct=units==='%'&&value!==''?Number(value):null;m.mrdLOD=lod!==''?Number(lod):null;m.mrdOther=units&&units!=='%'?`Value ${value} ${units}`:''
+  }else if(assessed==='Yes'&&method==='Other'){
+    let other=ed.querySelector('.im-other').value.trim(),v=ed.querySelector('.im-othervalue').value;m.mrdOther=other;m.mrdTarget=other;m.mrdValuePct=v===''?null:Number(v);m.mrdLOD=null
+  }else{m.mrdTarget='';m.mrdValuePct=null;m.mrdLOD=null;m.mrdOther=''}
+  markDomainReviewed(m,'mrd');inlineBmbxEditState.delete(m.id+'|mrd');openBmbxCards.add(m.id);save()
+}
+
 const inlineBmbxEditState=new Map();
 let ancillaryDraft={flow:[],mutations:[],fish:[],cyto:[],molecular:{}};
 
@@ -1367,6 +1509,7 @@ function bmbxRawForDomain(m,domain){
   if(domain==='ngs') return [m?.raw?.ngspos,m?.raw?.ngstest].filter(Boolean).join('\n\n')||m?.raw?.smart||'';
   if(domain==='cyto') return m?.raw?.cyto||m?.raw?.smart||'';
   if(domain==='fish') return m?.raw?.fish||m?.raw?.smart||'';
+  if(domain==='mrd') return m?.raw?.mrd||m?.mrdRaw||m?.raw?.smart||'';
   return ''
 }
 function domainNeedsReview(m,domain){
@@ -1376,6 +1519,7 @@ function domainNeedsReview(m,domain){
   if(domain==='ngs') return (m.mutations||[]).some(v=>v.result==='Positive'&&!v.gene) || /ngs|molecular|variant/.test(w);
   if(domain==='cyto') return (m.cytoObservations||[]).some(x=>!x.abnormality) || /cyto|karyotype/.test(w);
   if(domain==='fish') return (m.fishObservations||[]).some(x=>!x.target||['Unknown',''].includes(x.result||'')) || /fish/.test(w);
+  if(domain==='mrd') return !m.diagnostic && (!m.mrdAssessed||m.mrdAssessed==='Unknown'||/mrd/.test(w));
   return false
 }
 function domainReviewFooter(m,domain){
@@ -1930,26 +2074,43 @@ function render(){
  $('bmlist').innerHTML=D.marrows.length?D.marrows.map((m,i)=>{
  let c=cyc(m.date),r=responseWindow(m),resp=classifyResponse(m),pb=preferredBlast(m),ready=responseReadiness(m),n=i+1,bt=pb.value!=null?pb.value+'%':'Needs review',rc=responseColorClass(resp);
  let hdr=m.diagnostic?'<span class="pill ok">Diagnostic</span>':`<span class="pill ${rc}">${escHtml(resp)}</span>`,readyBadge=m.diagnostic?'':ready.state==='Complete'?'<span class="pill ok">Complete</span>':`<span class="pill warn">Needs ${escHtml(ready.missing.join(', '))}</span>`;
- let responseCBC=(!m.diagnostic&&r.mode!=='diagnostic')?`<div class="mutedbox" style="margin-top:10px"><h4 style="margin-top:0">Response CBC recovery</h4><div class="row two"><div><label>Best ANC response</label><select onchange="setResponseCBCSelection(${i},'anc',this.value)">${responseCBCOptions(m,'anc')}</select><span class=small>${r.fa?.anc!=null?`Selected: <b>${r.fa.anc}</b> on ${displayDate(r.fa.date)}`:'No eligible ANC found'}</span><label>G-CSF within prior 7 days</label><select onchange="setResponseValidity(${i},'ancGcsf7d',this.value)"><option ${(!m.ancGcsf7d||m.ancGcsf7d==='Unknown')?'selected':''}>Unknown</option><option ${m.ancGcsf7d==='No'?'selected':''}>No</option><option ${m.ancGcsf7d==='Yes'?'selected':''}>Yes</option></select></div><div><label>Best platelet response</label><select onchange="setResponseCBCSelection(${i},'plt',this.value)">${responseCBCOptions(m,'plt')}</select><span class=small>${r.fp?.plt!=null?`Selected: <b>${r.fp.plt}</b> on ${displayDate(r.fp.date)}`:'No eligible platelet count found'}</span><label>Platelet transfusion within prior 7 days</label><select onchange="setResponseValidity(${i},'pltTx7d',this.value)"><option ${(!m.pltTx7d||m.pltTx7d==='Unknown')?'selected':''}>Unknown</option><option ${m.pltTx7d==='No'?'selected':''}>No</option><option ${m.pltTx7d==='Yes'?'selected':''}>Yes</option></select></div></div><div class=small style="margin-top:7px"><b>Response window:</b> ${displayDate(m.date)} → ${displayDate(r.end)} · ${r.mode==='provisional'?'provisional until next-cycle/terminal boundary':'finalized boundary'}${m.ancGcsf7d==='Yes'||m.pltTx7d==='Yes'?` <span class="pill warn">Count validity needs adjudication</span>`:''}</div><div class=actions><button class="btn alt" onclick="setManualCounts(${i})">Manual count override</button></div></div>`:'';
+ let fa=r.fa,fp=r.fp,assessmentEditing=inlineBmbxAssessmentState.has(m.id);
  let blastPrev=`Aspirate ${m.blastAspirate??'—'}${m.blastAspirate!=null?'%':''} (${escHtml(m.aspirateAdequacy||'Unknown')}) · Flow ${m.blastFlow??'—'}${m.blastFlow!=null?'%':''} · IHC ${m.blastIhcLow!=null?(m.blastIhcLow===m.blastIhcHigh?m.blastIhcLow:m.blastIhcLow+'–'+m.blastIhcHigh)+'%':'—'} · Preferred ${escHtml(bt)}`;
  let flowPrev=(m.flow||[]).slice(0,10).map(flowDisplay).join(' · ')||'No structured phenotype';
  let ngsPrev=(m.mutations||[]).filter(x=>x.result==='Positive').slice(0,8).map(variantDisplay).join(' · ')||'No detected variants';
  let cytoPrev=[...cytoDescriptorChips(m),...(m.cytoObservations||[]).slice(0,8).map(x=>x.abnormality)].join(' · ')||'No structured cytogenetics';
  let fishPrev=(m.fishObservations||[]).slice(0,10).map(x=>x.target+' '+x.result).join(' · ')||'No structured FISH';
+ let mrdPrev=mrdPreview(m);
  return `<details class="card record-card domain-bmbx" ${openBmbxCards.has(m.id)?'open':''} ontoggle="rememberRecordCardOpenSafe('bmbx','${escHtml(m.id)}',this.open)"><summary class=bmbx-head><b>BMBx ${n}</b> · ${displayDate(m.date)} ${hdr} <span class=pill>${dxday(m.date)}</span> ${c?`<span class=pill>C${c.n}D${dd(c.start,m.date)+1}</span>`:''} <span class=small>Blasts ${escHtml(bt)}</span> ${readyBadge}</summary><div style="padding-top:12px">
- <div class="row two"><div class=metric>Blasts<b>${bt}</b><span class=small>${escHtml(pb.source)}</span></div><div class=metric>Genomic / cytogenetic summary<div style="margin-top:7px;line-height:1.9">${marrowBiologySummary(m)}</div></div></div>
+ <div class="row two"><div class=metric>Blasts<b>${bt}</b><span class=small>${escHtml(pb.source)}</span></div><div class=metric>Cytogenetic / Molecular Summary<div style="margin-top:7px;line-height:1.9">${marrowBiologySummary(m)}</div></div></div>
  <div class="metric response-tile ${rc}" style="margin-top:8px">Calculated response<b>${escHtml(resp)}</b>${m.ancGcsf7d==='Yes'||m.pltTx7d==='Yes'?'<span class=small>Count-support context requires adjudication.</span>':''}</div>
- <div class="mutedbox" style="margin-top:8px"><div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap"><div style="min-width:180px"><label>Peripheral blood blasts</label><select onchange="setMarrowAssessment(${i},'pb',this.value)"><option ${m.pb==='Unknown'||!m.pb?'selected':''}>Unknown</option><option ${m.pb==='Absent'?'selected':''}>Absent</option><option ${m.pb==='Present'?'selected':''}>Present</option></select>${m.pbBlastPct!=null?`<span class=small>${m.pbBlastPct}% reported</span>`:''}</div><div style="min-width:180px"><label>Extramedullary disease</label><select onchange="setMarrowAssessment(${i},'emd',this.value)"><option ${m.emd==='Unknown'||!m.emd?'selected':''}>Unknown</option><option value="Absent/resolved" ${m.emd==='Absent/resolved'?'selected':''}>Absent / resolved</option><option ${m.emd==='Present'?'selected':''}>Present</option></select></div>${m.diagnostic?'':`<div style="flex:1"><b>Response readiness:</b> ${ready.state==='Complete'?'<span class="pill ok">Complete</span>':`<span class="pill warn">Incomplete</span> <span class=small>${escHtml(ready.missing.join(', '))}</span>`}</div>`}</div></div>
- ${responseCBC}
- <details style="margin-top:10px"><summary><b>BMBx Data Details</b></summary><div class=detail-grid>
-  ${['blast','flow','ngs','cyto','fish'].map(domain=>{
-    let label={blast:'Blast Enumeration',flow:'Blast Immunophenotype',ngs:'NGS',cyto:'Conventional Cytogenetics',fish:'FISH'}[domain];
-    let preview={blast:blastPrev,flow:flowPrev,ngs:ngsPrev,cyto:cytoPrev,fish:fishPrev}[domain];
+
+ <div class=bmbx-assessment>
+   <div class=bmbx-assessment-head><b>BMBx Assessment</b><button class="btn alt" onclick="event.preventDefault();toggleBmbxAssessmentEditor(${i})">${assessmentEditing?'Close editor':'Edit'}</button></div>
+   <div class=bmbx-assessment-grid>
+     <div class=bmbx-assessment-item><span class=small>Marrow date</span><b>${displayDate(m.date)}</b></div>
+     <div class=bmbx-assessment-item><span class=small>Diagnostic / baseline</span><b>${m.diagnostic?'Yes':'No'}</b></div>
+     <div class=bmbx-assessment-item><span class=small>Peripheral blood blasts</span><b>${escHtml(m.pb||'Unknown')}${m.pbBlastPct!=null?' · '+m.pbBlastPct+'%':''}</b></div>
+     <div class=bmbx-assessment-item><span class=small>Extramedullary disease</span><b>${escHtml(m.emd||'Unknown')}</b></div>
+     <div class=bmbx-assessment-item><span class=small>Best ANC response</span><b>${m.diagnostic?'N/A':fa?.anc!=null?fa.anc:'Not available'}</b>${!m.diagnostic&&fa?.date?`<span class=small>${displayDate(fa.date)}</span>`:''}</div>
+     <div class=bmbx-assessment-item><span class=small>Best platelet response</span><b>${m.diagnostic?'N/A':fp?.plt!=null?fp.plt:'Not available'}</b>${!m.diagnostic&&fp?.date?`<span class=small>${displayDate(fp.date)}</span>`:''}</div>
+     <div class=bmbx-assessment-item><span class=small>Response window</span><b>${m.diagnostic?'N/A':displayDate(m.date)+' → '+displayDate(r.end)}</b>${!m.diagnostic?`<span class=small>${r.mode==='provisional'?'Provisional':'Finalized boundary'}</span>`:''}</div>
+     <div class=bmbx-assessment-item><span class=small>Response readiness</span><b>${m.diagnostic?'Not response-evaluable':ready.state}</b>${!m.diagnostic&&ready.state!=='Complete'?`<span class=small>${escHtml(ready.missing.join(', '))}</span>`:''}</div>
+   </div>
+   ${assessmentEditing?bmbxAssessmentEditor(m,i,r,ready):''}
+ </div>
+
+ <div class=bmbx-data-title>BMBx Data Details</div>
+ <div class=detail-grid>
+  ${['blast','flow','ngs','cyto','fish','mrd'].map(domain=>{
+    let label={blast:'Blast Enumeration',flow:'Blast Immunophenotype',ngs:'NGS',cyto:'Conventional Cytogenetics',fish:'FISH',mrd:'MRD'}[domain];
+    let preview={blast:blastPrev,flow:flowPrev,ngs:ngsPrev,cyto:cytoPrev,fish:fishPrev,mrd:mrdPrev}[domain];
     let key=m.id+'|'+domain,editing=inlineBmbxEditState.get(key),raw=bmbxRawForDomain(m,domain),review=domainNeedsReview(m,domain);
     return `<div class=detail-row><div class=detail-row-head><b>${label}${review?'<span class="pill warn review-badge">Needs review</span>':''}</b><div class=detail-actions><button class="btn alt" onclick="event.preventDefault();toggleInlineBmbxEditor(${i},'${domain}')">${editing?'Close editor':'Edit'}</button></div></div><div class=detail-preview>${escHtml(preview)}</div>${editing?inlineEditorHTML(m,i,domain):''}${raw?`<details class=raw-panel><summary class=small>Show raw data</summary><pre style="white-space:pre-wrap;font:inherit;font-size:12px">${escHtml(raw)}</pre></details>`:''}<div class=provenance>${domainReviewFooter(m,domain)}</div></div>`
   }).join('')}
- </div></details>
- <div class=actions><button class="btn alt" onclick="editMarrow(${i})">Edit full BMBx</button><button class="btn danger" onclick="delMarrow(${i})">Delete BMBx</button></div></div></details>`
+ </div>
+ <div class=actions><button class="btn alt" onclick="toggleAllBmbxEditors(${i})">${allBmbxEditorsOpen(m)?'Close all BMBx editors':'Edit all BMBx fields'}</button><button class="btn danger" onclick="delMarrow(${i})">Delete BMBx</button></div>
+ </div></details>`
 }).join(''):'<p class=help>No confirmed BMBx assessments yet.</p>';
 
  $('cbctable').innerHTML=D.cbc.length?`<table><tr><th>Date/time</th><th>Dx day</th><th>ANC</th><th>ANC source</th><th>Platelets</th><th>Source</th><th></th></tr>${D.cbc.map((x,i)=>`<tr><td>${displayDate(x.date)} ${x.timestamp.slice(11,16)}</td><td>${dxday(x.date)}</td><td>${x.anc??''}</td><td>${x.anc_source||''}</td><td>${x.plt??''}</td><td>${x.source||''}</td><td><button class="btn alt" onclick="editCBC(${i})">Edit</button> <button class="btn danger" onclick="delCBC(${i})">Delete</button></td></tr>`).join('')}</table>`:'<p class=help>No confirmed CBC data.</p>';
@@ -1999,7 +2160,7 @@ function render(){
  ev.sort((a,b)=>a.date.localeCompare(b.date));$('tl').innerHTML=ev.map(x=>`<div class="event event-${x.type}"><b>${displayDate(x.date)}</b><div>${escHtml(x.text)}</div></div>`).join('')||'<p class=help>No dated events.</p>'
 }
 function dl(n,t,type='text/plain'){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type}));a.download=n;a.click()}
-function jsonOut(){dl((D.base.study||'AML-demo')+'_V4.1.json',JSON.stringify(D,null,2),'application/json')}
+function jsonOut(){dl((D.base.study||'AML-demo')+'_V4.2.json',JSON.stringify(D,null,2),'application/json')}
 function csv(rows){if(!rows.length)return'';let k=[...new Set(rows.flatMap(Object.keys))];return[k.join(','),...rows.map(r=>k.map(x=>`"${String(r[x]??'').replaceAll('"','""')}"`).join(','))].join('\n')}
 function csvOut(k){
  let r=k==='cycles'?D.cycles.map(x=>({study_id:D.base.study,...x})):
@@ -2020,7 +2181,7 @@ function csvOut(k){
 }
 function resetAll(){
  if(confirm('Clear all data for the current patient from this browser? This will clear Treatment Cycles, BMBx, Ancillary Studies, CBC Trend, outcomes, and Smart Import staging.')){
-   ['AML_AV_V41','AML_AV_V40','AML_AV_V32','AML_AV_V31','AML_AV_V30','AML_AV_V210'].forEach(k=>localStorage.removeItem(k));
+   ['AML_AV_V42','AML_AV_V41','AML_AV_V40','AML_AV_V32','AML_AV_V31','AML_AV_V30','AML_AV_V210'].forEach(k=>localStorage.removeItem(k));
    smartMultiStage={cycles:[],bmbx:[],ancillary:[],cbc:[]};
    location.reload()
  }

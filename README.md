@@ -1,21 +1,45 @@
-# AML AZA/VEN Tracker V4.1
+# AML AZA/VEN Tracker V4.2
 
-V4.1 is a workflow and editing refinement of V4.0.
+V4.2 completes the in-place BMBx editing redesign.
 
-## Major changes
-- Smart Import labels simplified to Date (optional), Source (optional), and Diagnostic BMBx.
-- True in-place BMBx domain editing for Blast Enumeration, Blast Immunophenotype, NGS, Conventional Cytogenetics, and FISH.
-- Every BMBx detail tile keeps its concise overview while editing.
-- Every BMBx detail tile has an independent Show raw data section.
-- Tile-level provenance and Needs review badges.
-- Full Edit BMBx remains available.
-- Ancillary Studies now uses Date → Specimen → Assay with dynamic assay-specific forms.
-- Flow, NGS, FISH, Cytogenetics, and Molecular MRD / PCR use structured editors.
-- Molecular targets include NPM1, RUNX1::RUNX1T1, CBFB::MYH11, PML::RARA, FLT3-ITD, FLT3-TKD, BCR::ABL1, KMT2A::MLLT3, DEK::NUP214, IDH1, IDH2, WT1, and Other.
-- Positive CSF studies prompt CNS adjudication; positive non-CSF fluid studies prompt possible EMD review.
-- Smart Import duplicate detection offers UPDATE / ADD / CANCEL for likely duplicate cycles, BMBx, ancillary studies, and CBC observations.
-- CBC Trend has Delete All CBC Observations at the bottom.
-- Clear Current Patient Data now clears current and fallback storage keys, fixing the previous reset failure.
-- Existing timeline/domain color coding is preserved without adding an extra tiny text label.
+## BMBx layout
+- Expanded BMBx card is now the complete editing workspace.
+- Top summary remains:
+  - Blasts
+  - Cytogenetic / Molecular Summary
+  - Calculated response
+- BMBx Assessment now groups all response-context data:
+  - marrow date
+  - diagnostic / baseline status
+  - peripheral-blood blasts
+  - extramedullary disease
+  - best ANC response and date
+  - best platelet response and date
+  - response window
+  - response readiness
+  - G-CSF / platelet-transfusion context when editing
+- Best ANC and platelet selectors remain independent and constrained to the defined response window.
+- BMBx Data Details is permanently visible rather than nested in another collapsible parent.
+- Individual in-place editors remain for:
+  - Blast Enumeration
+  - Blast Immunophenotype
+  - NGS
+  - Conventional Cytogenetics
+  - FISH
+  - MRD
+- Edit all BMBx fields expands the assessment and all structured domain editors in place. No separate full-BMBx editor needs to be launched from the card.
+
+## MRD
+- MRD tile is present for every marrow.
+- Diagnostic marrow displays N/A — diagnostic marrow but retains the MRD tile and Edit action.
+- Post-treatment MRD editor is assay-aware:
+  - Flow cytometry
+  - NGS
+  - Molecular PCR/qPCR
+  - Other
+- MRD remains marrow-linked while analogous non-marrow assays remain in Ancillary Studies.
+- Existing compatibility MRD fields are retained for response/readiness logic and export.
+
+All V4.1 Smart Import, Ancillary Studies, CBC, duplicate detection, reset, color coding, and timeline behavior are preserved.
 
 De-identified prototype only. Do not use public/static hosting for PHI.
