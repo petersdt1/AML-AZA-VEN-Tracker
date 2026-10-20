@@ -1,28 +1,19 @@
-# V3.1 Regression Checklist
+# V3.2 Regression Checklist
 
-Blast hierarchy:
-- adequate aspirate > flow
-- limited aspirate + adequate flow => flow > IHC
-- manual override always wins
+## Smart Import
+- Unified source text can build a local-parser draft with no endpoint configured.
+- AI JSON handoff validates and maps into the same draft schema.
+- Endpoint response may be direct JSON or wrapped in `data` / `extraction`.
+- Unknown fields remain Unknown/null.
+- Tested genes are converted to Negative only when explicitly listed as assayed and no positive variant is present.
+- FISH Negative remains Negative.
+- RUNX1 copy gain stays distinct from RUNX1::RUNX1T1.
+- AI/parser blast disagreements surface as review flags.
+- Review Smart Import draft opens the standard structured BMBx editor.
+- Saving a Smart Import draft preserves original unified raw source and extraction provenance.
+- Legacy segmented import still functions.
+- CBC parser remains unchanged.
 
-ELN 2022:
-- negative t(8;21) does not create favorable risk
-- RUNX1 copy gain does not equal RUNX1::RUNX1T1
-- negative MECOM/KMT2A does not create adverse risk
-- true positive t(8;21) and CBFB::MYH11 are recognized only from structured positive data
-- TP53 pathogenic VAF >=10% => adverse
-- NPM1 + adverse cytogenetics => adverse
-- NPM1 + FLT3-ITD => intermediate
-- NPM1 + explicit FLT3-ITD negative => favorable absent adverse cytogenetics
-- t(9;11) => intermediate with ELN precedence over rare MR-gene mutations
-- complex/monosomal/adverse cytogenetics => adverse without favorable defining lesion
-- MR genes do not override established favorable-risk AML subtype
-- raw source text alone cannot trigger risk
-
-ELN 2024 LI:
-- prior HMA => not applicable
-- TP53 mutated => adverse
-- DDX41 mutated with TP53 negative => favorable
-- TP53 negative + FLT3-ITD/NRAS/KRAS any positive => intermediate
-- TP53 negative + all three negative => favorable
-- required unknown status => unable to determine
+## Clinical calculation separation
+- Smart Import never directly sets ELN risk, response, complex karyotype, AML-MR, or eligibility.
+- V3.1 ELN and blast hierarchy regression behavior remains unchanged.

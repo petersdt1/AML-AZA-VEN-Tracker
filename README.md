@@ -1,16 +1,24 @@
-# AML AZA/VEN Tracker V3.1
+# AML AZA/VEN Tracker V3.2
 
-Clinical-logic hardening release.
+V3.2 introduces the Smart Import architecture for heterogeneous marrow reports.
 
-- Blast hierarchy: manual adjudication → adequate aspirate → adequate flow → core/IHC → limited aspirate.
-- Raw cytogenetic/FISH text cannot directly drive ELN risk.
-- ELN 2022 consumes only structured Present/Positive observations.
-- RUNX1 copy gain is distinct from RUNX1::RUNX1T1.
-- Negative FISH cannot trigger favorable/adverse risk.
-- ELN 2022 now returns an auditable evidence trace.
-- TP53 VAF ≥10%, NPM1 + adverse cytogenetics, CBF AML, CEBPA-bZIP, t(9;11), adverse cytogenetics, MR genes, and FLT3-ITD have explicit branches.
-- ELN 2024 Less-Intensive is isolated from ELN 2022 and uses prior HMA, TP53, DDX41, FLT3-ITD, NRAS, and KRAS only.
-- Unknown required assay status propagates to Unable to determine.
-- DDX41 is shown in the key molecular marker table.
+## Smart Import
+- One unified free-text source box for mixed pathology, flow, cytogenetics, FISH, and molecular reports.
+- Optional institution-hosted AI extraction endpoint using a strict observation-only JSON schema.
+- No API key is stored or requested by the static page. The endpoint URL alone is stored locally.
+- If no endpoint is configured, a local deterministic parser fallback builds a draft so the workflow can be tested now.
+- A Copy AI extraction prompt + Manual AI JSON handoff provides an immediately testable bridge before a backend endpoint exists.
+- Every extraction is converted into the existing structured BMBx schema, then reviewed in the same editable BMBx editor before saving.
+- AI is explicitly prohibited from assigning ELN risk, response, complex karyotype, AML-MR status, or eligibility. Those remain deterministic app calculations.
+- AI schema preserves Positive vs Negative FISH/rearrangement results and requires Unknown/null instead of unsupported inference.
+- Explicit tested-gene coverage is distinct from detected variants; absence from a report is not interpreted as negative.
+- Evidence snippets and extraction warnings are retained with the draft.
+- AI/parser numeric disagreements are surfaced as review flags.
+- The original unified source text is retained read-only in the structured editor for provenance.
 
-De-identified prototype only; not a PHI-ready production database.
+## Existing workflows preserved
+- CBC trend import remains deterministic.
+- The prior segmented marrow import is retained under a collapsed Legacy parser fallback section.
+- V3.1 localStorage migrates into V3.2.
+
+This remains a de-identified prototype. Do not send PHI to an unapproved endpoint or public service.

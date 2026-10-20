@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AML AZA/VEN Tracker V3.1</title>
+<title>AML AZA/VEN Tracker V3.2</title>
 <style>
 :root{
   --bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#667085;--line:#dde3ec;
@@ -43,11 +43,11 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 </style>
 </head>
 <body>
-<header><h1>AML AZA/VEN Longitudinal Tracker V3.1</h1><div class="sub" id="hdr">No patient selected</div></header>
+<header><h1>AML AZA/VEN Longitudinal Tracker V3.2</h1><div class="sub" id="hdr">No patient selected</div></header>
 <div class="demo"><b>DEMO / FAKE DATA ONLY.</b> Static GitHub prototype. Do not enter names, MRNs, DOBs, or PHI.</div>
 <div class="wrap"><div class="layout">
 <nav>
-<button class="on" data-t="quick">Quick Import</button>
+<button class="on" data-t="quick">Smart Import</button>
 <button data-t="base">Baseline</button>
 <button data-t="cycles">Treatment Cycles</button>
 <button data-t="marrows">Bone Marrows</button>
@@ -60,9 +60,20 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 
 <section id="quick" class="on">
 <div class="card">
-<h2>Source-first abstraction</h2>
-<p class="help">Paste source material first, review what was extracted, then confirm. Manual entry remains available throughout.</p>
+<h2>Smart Import</h2>
+<p class="help">Paste heterogeneous source text once. AI-assisted extraction can populate a structured draft, which is always reviewed in the same BMBx editor before saving. Clinical classifications remain deterministic and are never assigned by the extraction model.</p>
 <div class="row"><div class="metric">Study ID<b id="mID">—</b></div><div class="metric">Completeness<b id="mComp">0%</b></div><div class="metric">Data issues<b id="mIssues">0</b></div></div>
+</div>
+
+<div class="card source" id="smartImportCard">
+<h3>✦ AI-assisted BMBx Smart Import</h3>
+<p class="help">Paste a marrow/pathology/flow/cytogenetics/FISH/NGS package in any layout. The extraction layer returns observations only; ELN, response, complex karyotype, and other derived variables are calculated separately by the app.</p>
+<div class="row"><div><label>BMBx date</label><input type="text" id="smartDate" placeholder="MM/DD/YYYY (optional if AI can extract it)"></div><div><label>Source type hint</label><select id="smartSourceType"><option value="auto">Auto / mixed package</option><option value="pathology">Pathology / morphology</option><option value="flow">Flow cytometry</option><option value="cyto">Cytogenetics / karyotype</option><option value="fish">FISH</option><option value="ngs">NGS / molecular</option></select></div><div class="inline-check"><input type="checkbox" id="smartDiagnostic"><label for="smartDiagnostic" style="margin:0">Diagnostic / baseline BMBx</label></div></div>
+<label>Unified source text</label><textarea id="smartSource" class="big" style="min-height:260px" placeholder="Paste one report or a mixed package here. Keep the original wording. The extractor should return Unknown/null when the source does not establish a field."></textarea>
+<div class="mutedbox" style="margin-top:10px"><div class="row two"><div><label>Institution AI extraction endpoint (optional)</label><input id="smartEndpoint" placeholder="https://approved-endpoint/...  (URL only; never paste an API key)"></div><div class="small" style="padding-top:28px">If no endpoint is configured, the prototype creates a local-parser draft so the Smart Import workflow can still be tested. For real PHI, use only an institution-approved authenticated endpoint.</div></div><div class="tools"><button class="btn alt" onclick="saveSmartEndpoint()">Save endpoint URL</button></div></div>
+<div class="tools"><button class="btn" id="smartExtractBtn" onclick="smartExtract()">Extract structured draft</button><button class="btn alt" onclick="copySmartPrompt()">Copy AI extraction prompt</button><button class="btn alt" onclick="smartLoadDemo()">Load demo package</button></div>
+<details style="margin-top:10px"><summary><b>Manual AI JSON handoff</b> <span class="small">useful for testing before an embedded institutional endpoint is connected</span></summary><p class="help">Paste JSON returned by an AI using the copied extraction prompt. The app validates and maps it into the same structured draft workflow.</p><textarea id="smartJson" class="notes" style="min-height:180px" placeholder='{"schema_version":"aml_bmbx_extract_v1", ...}'></textarea><div class="tools"><button class="btn alt" onclick="useSmartJson()">Validate + load AI JSON</button></div></details>
+<div id="smartStage"></div>
 </div>
 
 <div class="card source">
@@ -73,8 +84,8 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 <div id="cbcstage"></div>
 </div>
 
-<div class="card source">
-<h3>⇩ Marrow source package</h3>
+<details class="card source" id="legacyMarrowImport"><summary><b>Legacy segmented marrow import / parser fallback</b> <span class="small">separate pathology, flow, cytogenetics, FISH, and NGS boxes</span></summary><div style="padding-top:12px">
+<h3>⇩ Segmented marrow source package</h3>
 <div class="row two"><div><label>Marrow date</label><input type="text" id="bmdate" placeholder="MM/DD/YYYY"></div><div class="inline-check"><input type="checkbox" id="diag" onchange="toggleQuickMRD()"><label for="diag" style="margin:0">Diagnostic / baseline marrow</label></div></div>
 <label>Pathology / morphology</label><textarea id="path" placeholder="Paste marrow pathology / morphology"></textarea>
 <label>Flow cytometry</label><textarea id="flow" placeholder="Paste raw flow report"></textarea>
@@ -97,7 +108,7 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 
 <div class="tools"><button class="btn" onclick="extractBM()">Extract marrow data</button><button class="btn alt" onclick="fakeBM()">Load fake example</button></div>
 <div id="bmstage"></div>
-</div>
+</div></details>
 </section>
 
 <section id="base">
@@ -151,6 +162,7 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 <details id="structuredReview" style="margin-top:12px">
 <summary><b>Structured data review</b> <span class="small">Edit parser-derived blasts, Flow, NGS, cytogenetics, FISH, and MRD only when needed</span></summary>
 <div style="padding-top:10px"><div class="small" style="margin-bottom:8px">Raw source text is read-only and collapsed by default so missed or misparsed findings can be checked against the original report.</div>
+<details id="rawSmartWrap" style="display:none;margin-bottom:8px"><summary class="small"><b>Show unified Smart Import source</b></summary><textarea id="rawEditSmart" readonly class="notes" style="margin-top:6px;min-height:180px"></textarea></details>
 
 <details>
 <summary><b>Blast assessment</b> <span class="small">source values and preferred blast calculation</span></summary>
@@ -244,8 +256,8 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 </main></div></div>
 
 <script>
-const K='AML_AV_V31';
-let D=JSON.parse(localStorage.getItem(K)||localStorage.getItem('AML_AV_V30')||localStorage.getItem('AML_AV_V210')||'null')||{
+const K='AML_AV_V32';
+let D=JSON.parse(localStorage.getItem(K)||localStorage.getItem('AML_AV_V31')||localStorage.getItem('AML_AV_V30')||localStorage.getItem('AML_AV_V210')||'null')||{
   base:{},cycles:[],marrows:[],cbc:[],
   out:{relapse_date_auto:'',relapse_date_final:'',relapse_basis:'',relapse_overridden:false},
   audit:[]
@@ -718,6 +730,66 @@ function toggleQuickMRD(){
  let assessed=$('qmrdAssessed')?.value||'No';
  details.style.display=(!diagnostic&&assessed==='Yes')?'block':'none'
 }
+const SMART_SCHEMA_VERSION='aml_bmbx_extract_v1';
+let smartDraftStage=null,marrowEditorDraftBase=null;
+
+function smartExtractionPrompt(sourceText=''){
+ return `You are extracting structured AML bone marrow data from heterogeneous clinical source text. Return JSON only, no markdown. Do not calculate ELN risk, AML response, complex karyotype, AML-MR status, or trial eligibility. Extract observations only. Never infer a negative result from absence. A gene is Negative only if assay coverage explicitly establishes it was tested and no mutation was detected. Generic gene-panel coverage does not establish special assay status: generic FLT3 testing is not automatically FLT3-ITD or FLT3-TKD negative, and generic KMT2A sequence testing is not KMT2A-rearrangement negative. If FLT3-ITD or FLT3-TKD is explicitly reported, use gene FLT3-ITD or FLT3-TKD with Positive/Negative. If KMT2A rearrangement is explicitly reported outside FISH/cytogenetics, use gene KMT2A-REARRANGEMENT. A FISH/rearrangement result must preserve Positive versus Negative exactly. RUNX1 copy gain is NOT RUNX1::RUNX1T1. If a field is not established, return null or Unknown. Preserve source evidence verbatim in short snippets.\n\nSchema version: ${SMART_SCHEMA_VERSION}\nJSON shape:\n{\n  "schema_version":"aml_bmbx_extract_v1",\n  "date":"YYYY-MM-DD or null",\n  "diagnostic":true|false|null,\n  "blasts":{\n    "aspirate_pct":number|null,\n    "aspirate_adequacy":"Adequate|Hemodilute / limited|Aspicular / aparticulate|Hemodilute + aspicular|Unknown",\n    "flow_pct":number|null,\n    "flow_adequate":true|false|null,\n    "ihc_low_pct":number|null,\n    "ihc_high_pct":number|null,\n    "pb_status":"Present|Absent|Unknown",\n    "pb_pct":number|null,\n    "emd_status":"Present|Absent/resolved|Unknown"\n  },\n  "flow":[{"marker":"CD34","result":"Positive|Negative|Equivocal|Reported","modifier":"dim|moderate|bright|partial|variable|heterogeneous|limited subset|aberrant|other|","evidence":"short source snippet"}],\n  "mutations":[{"gene":"TP53","result":"Positive|Negative","protein":"","cdna":"","transcript":"","vaf":number|null,"classification":"Pathogenic|Likely pathogenic|VUS|Reported|Not detected","evidence":"short source snippet"}],\n  "tested_genes":["sequence-level genes explicitly shown as assayed; do not use this for FLT3-ITD/TKD or rearrangement assays"],\n  "cytogenetics":[{"abnormality":"del(5)(q13q33)","result":"Present","evidence":"short source snippet"}],\n  "fish":[{"target":"t(8;21)","result":"Positive|Negative|Indeterminate|Unknown","evidence":"short source snippet"}],\n  "mrd":{"assessed":"Yes|No|Unknown","status":"Positive|Negative|Indeterminate|Not performed|Unknown","methods":[],"target":"","value_pct":number|null,"lod_pct":number|null,"specimen":"Bone marrow|Peripheral blood|Other|Unknown","lab":"Local|Central|Unknown","evidence":"short source snippet"},\n  "evidence":{"blasts.aspirate_pct":"...","blasts.aspirate_adequacy":"...","blasts.flow_pct":"...","blasts.ihc_low_pct":"...","blasts.pb_pct":"..."},\n  "warnings":["ambiguities or conflicts requiring human review"]\n}\n\nSOURCE TEXT:\n${sourceText}`
+}
+function saveSmartEndpoint(){let v=$('smartEndpoint').value.trim();localStorage.setItem('AML_SMART_ENDPOINT',v);$('smartStage').innerHTML=`<div class=good>${v?'Endpoint URL saved locally in this browser.':'Endpoint cleared.'}</div>`}
+function smartEvidenceLine(text,patterns){let lines=String(text||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);for(let p of patterns){let r=p instanceof RegExp?p:new RegExp(p,'i'),x=lines.find(l=>r.test(l));if(x)return x.slice(0,320)}return''}
+function smartSections(text,type='auto'){
+ let all=String(text||''),out={path:'',flow:'',cyto:'',fish:'',ngs:'',tested:''};
+ if(type!=='auto'){if(type==='pathology')out.path=all;if(type==='flow')out.flow=all;if(type==='cyto')out.cyto=all;if(type==='fish')out.fish=all;if(type==='ngs')out.ngs=all;return out}
+ let lines=all.split(/\r?\n/),current='path';
+ for(let line of lines){let l=line.trim();if(/^(?:flow cytometry|flow\b)/i.test(l))current='flow';else if(/^(?:cytogenetics|karyotype|chromosome analysis)/i.test(l))current='cyto';else if(/^(?:fish|fluorescence in situ)/i.test(l))current='fish';else if(/^(?:ngs|molecular|next[- ]generation sequencing|heme malignanc.*panel|genomic profiling)/i.test(l))current='ngs';else if(/^(?:pathology|morphology|final diagnosis|bone marrow|peripheral blood)/i.test(l)&&!/flow/i.test(l))current='path';out[current]+=(out[current]?'\n':'')+line}
+ if(!out.flow&&/flow cytometr|immunophenotyp/i.test(all))out.flow=all;
+ if(!out.cyto&&/(?:\b46,[XY]|\b45,[XY]|\b47,[XY]|karyotype|cytogenetic)/i.test(all))out.cyto=all;
+ if(!out.fish&&/\bFISH\b|not detected.*t\(|deletion.*q/i.test(all))out.fish=all;
+ if(!out.ngs&&/\bVAF\b|pathogenic|variant of (?:unknown|uncertain) significance|\bc\.[0-9]|\bp\.[A-Z]/i.test(all))out.ngs=all;
+ return out
+}
+function buildLocalSmartDraft(text,type){
+ let s=smartSections(text,type),path=s.path||text,flowTxt=s.flow||'',bd=extractBlastData(path,flowTxt),pb=extractPBBlastData(path),asp=extractAspirateAdequacy(path),ngs=muts(s.ngs||'',s.tested||'');
+ return {schema_version:SMART_SCHEMA_VERSION,date:null,diagnostic:null,blasts:{aspirate_pct:bd.aspirate,aspirate_adequacy:asp,flow_pct:bd.flow,flow_adequate:bd.flow==null?null:true,ihc_low_pct:bd.ihcLow,ihc_high_pct:bd.ihcHigh,pb_status:pb.status,pb_pct:pb.pct,emd_status:'Unknown'},flow:flowparse(flowTxt),mutations:ngs,tested_genes:[],cytogenetics:cytogeneticObservations(s.cyto||''),fish:fishparse(s.fish||''),mrd:{assessed:'Unknown',status:'Unknown',methods:[],target:'',value_pct:null,lod_pct:null,specimen:'Bone marrow',lab:'Unknown',evidence:''},evidence:{'blasts.aspirate_pct':smartEvidenceLine(path,[/aspirat.*blast/i,/manual differential/i]),'blasts.aspirate_adequacy':smartEvidenceLine(path,[/hemodilut|aspicular|aparticulate/i]),'blasts.flow_pct':smartEvidenceLine(flowTxt,[/blast.*%|%.*blast/i]),'blasts.ihc_low_pct':smartEvidenceLine(path,[/CD34|CD117|IHC/i]),'blasts.pb_pct':smartEvidenceLine(path,[/peripheral.*blast|blasts?\s*%/i])},warnings:['Prototype local-parser fallback used because no AI endpoint was configured. Review all fields before saving.']}
+}
+function smartNum(x){return x===null||x===undefined||x===''?null:(Number.isFinite(Number(x))?Number(x):null)}
+function normalizeSmartDraft(d){
+ d=d?.extraction||d?.data||d||{};let b=d.blasts||{},m=d.mrd||{};
+ let mutations=(Array.isArray(d.mutations)?d.mutations:[]).map(x=>({gene:String(x.gene||'').toUpperCase(),result:['Positive','Negative'].includes(x.result)?x.result:'Positive',protein:x.protein||'',cdna:x.cdna||'',transcript:x.transcript||'',vaf:smartNum(x.vaf),classification:x.result==='Negative'?'Not detected':(x.classification||'Reported'),source:'AI-assisted extraction',raw_description:x.evidence||'',evidence:x.evidence||''})).filter(x=>x.gene);
+ let posGenes=new Set(mutations.filter(x=>x.result==='Positive').map(x=>x.gene)),negGenes=new Set(mutations.filter(x=>x.result==='Negative').map(x=>x.gene));
+ (Array.isArray(d.tested_genes)?d.tested_genes:[]).map(x=>String(x||'').trim().toUpperCase()).filter(Boolean).forEach(g=>{if(!posGenes.has(g)&&!negGenes.has(g))mutations.push({gene:g,result:'Negative',protein:'',cdna:'',transcript:'',vaf:null,classification:'Not detected',source:'AI explicit assay coverage + not detected',raw_description:'',evidence:'Explicitly listed as assayed; no detected variant returned'})});
+ return {schema_version:d.schema_version||SMART_SCHEMA_VERSION,date:d.date||null,diagnostic:typeof d.diagnostic==='boolean'?d.diagnostic:null,blasts:{aspirate_pct:smartNum(b.aspirate_pct),aspirate_adequacy:['Adequate','Hemodilute / limited','Aspicular / aparticulate','Hemodilute + aspicular','Unknown'].includes(b.aspirate_adequacy)?b.aspirate_adequacy:'Unknown',flow_pct:smartNum(b.flow_pct),flow_adequate:typeof b.flow_adequate==='boolean'?b.flow_adequate:null,ihc_low_pct:smartNum(b.ihc_low_pct),ihc_high_pct:smartNum(b.ihc_high_pct),pb_status:['Present','Absent','Unknown'].includes(b.pb_status)?b.pb_status:'Unknown',pb_pct:smartNum(b.pb_pct),emd_status:['Present','Absent/resolved','Unknown'].includes(b.emd_status)?b.emd_status:'Unknown'},flow:(Array.isArray(d.flow)?d.flow:[]).map(x=>({marker:String(x.marker||'').toUpperCase(),result:['Positive','Negative','Equivocal','Reported'].includes(x.result)?x.result:'Reported',modifier:x.modifier||'',evidence:x.evidence||'',source:'AI-assisted extraction'})).filter(x=>x.marker),mutations,tested_genes:Array.isArray(d.tested_genes)?d.tested_genes:[],cytogenetics:(Array.isArray(d.cytogenetics)?d.cytogenetics:[]).map(x=>withAMLNormalization({abnormality:x.abnormality||'',result:'Present',source:'AI-assisted extraction',evidence:x.evidence||''},'abnormality')).filter(x=>x.abnormality),fish:(Array.isArray(d.fish)?d.fish:[]).map(x=>withAMLNormalization({target:x.target||'',result:['Positive','Negative','Indeterminate','Unknown'].includes(x.result)?x.result:'Unknown',raw_description:x.evidence||'',evidence:x.evidence||''},'target')).filter(x=>x.target),mrd:{assessed:['Yes','No','Unknown'].includes(m.assessed)?m.assessed:'Unknown',status:['Positive','Negative','Indeterminate','Not performed','Unknown'].includes(m.status)?m.status:'Unknown',methods:Array.isArray(m.methods)?m.methods:[],target:m.target||'',value_pct:smartNum(m.value_pct),lod_pct:smartNum(m.lod_pct),specimen:m.specimen||'Bone marrow',lab:m.lab||'Unknown',evidence:m.evidence||''},evidence:d.evidence||{},warnings:Array.isArray(d.warnings)?d.warnings:[]}
+}
+function smartDraftToMarrow(d,method){
+ let text=$('smartSource').value,type=$('smartSourceType').value,s=smartSections(text,type),dateRaw=$('smartDate').value.trim(),date=dateRaw?normalizeDateText(dateRaw,'BMBx date'):(d.date?normalizeDateText(d.date,'AI-extracted BMBx date'):null);if(date===null)return null;
+ let diag=$('smartDiagnostic').checked||(d.diagnostic===true),b=d.blasts||{},mr=d.mrd||{};
+ let o={id:'BM'+Date.now(),date,diagnostic:diag,blastAspirate:b.aspirate_pct,aspirateAdequacy:b.aspirate_adequacy||'Unknown',blastFlow:b.flow_pct,flowAdequate:b.flow_adequate,flowPossibleUnparsed:false,preferredBlastManual:null,blastIhcLow:b.ihc_low_pct,blastIhcHigh:b.ihc_high_pct,pb:b.pb_status||'Unknown',pbBlastPct:b.pb_pct,emd:b.emd_status||'Unknown',mrd:diag?'':(mr.status||'Unknown'),mrdAssessed:diag?'Not applicable':(mr.assessed||'Unknown'),mrdMethods:diag?[]:(mr.methods||[]),mrdTarget:diag?'':(mr.target||''),mrdOther:'',mrdValuePct:diag?null:mr.value_pct,mrdLOD:diag?null:mr.lod_pct,mrdSpecimen:diag?'Bone marrow':(mr.specimen||'Bone marrow'),mrdLab:diag?'Unknown':(mr.lab||'Unknown'),raw:{smart:text,path:s.path||'',flow:s.flow||'',cyto:s.cyto||'',fish:s.fish||'',ngspos:s.ngs||'',ngstest:(d.tested_genes||[]).join(' ')},flow:d.flow||[],mutations:d.mutations||[],cytoObservations:d.cytogenetics||[],fishObservations:d.fish||[],cytoHits:[],normalizedFindings:[],manualAnc:null,manualAncDate:'',manualPlt:null,manualPltDate:'',selectedAncTs:'',selectedPltTs:'',source:method,extractionMethod:method,extractionEvidence:d.evidence||{},extractionWarnings:d.warnings||[]};
+ o.cytoHits=structuredCytoHits(o.cytoObservations,o.fishObservations);o.normalizedFindings=normalizedPositiveFindings(o);return o
+}
+function compareSmartToLocal(ai,text,type){
+ let local=normalizeSmartDraft(buildLocalSmartDraft(text,type)),w=[];let pairs=[['Aspirate blasts',ai.blasts.aspirate_pct,local.blasts.aspirate_pct],['Flow blasts',ai.blasts.flow_pct,local.blasts.flow_pct],['IHC low',ai.blasts.ihc_low_pct,local.blasts.ihc_low_pct],['IHC high',ai.blasts.ihc_high_pct,local.blasts.ihc_high_pct],['PB blasts',ai.blasts.pb_pct,local.blasts.pb_pct]];pairs.forEach(([n,a,b])=>{if(a!=null&&b!=null&&Math.abs(Number(a)-Number(b))>0.1)w.push(`${n}: AI ${a}% vs parser ${b}%`)});return w
+}
+function smartEvidenceHtml(d){let e=d.evidence||{},rows=Object.entries(e).filter(([,v])=>v);return rows.length?`<details style="margin-top:8px"><summary><b>Extraction evidence</b> <span class=small>${rows.length} source snippet(s)</span></summary>${rows.map(([k,v])=>`<div class=mutedbox style="margin-top:6px"><b>${escHtml(k)}</b><div class=small>${escHtml(v)}</div></div>`).join('')}</details>`:''}
+function renderSmartStage(d,method,extraWarnings=[]){
+ let o=smartDraftToMarrow(d,method);if(!o){$('smartStage').innerHTML='<div class=warnbox>Enter a BMBx date or provide an extractable date in the AI JSON before reviewing.</div>';return}smartDraftStage=o;window._smartStage=o;let p=preferredBlast(o),warn=[...(d.warnings||[]),...extraWarnings];
+ $('smartStage').innerHTML=`<div class=stage><b>Structured draft ready</b> <span class="pill ${method.startsWith('AI')?'ok':'warn'}">${escHtml(method)}</span><p>${displayDate(o.date)} · ${o.diagnostic?'Diagnostic':'Follow-up'} BMBx</p><div class="row"><div class=metric>Preferred blasts<b>${p.value!=null?p.value+'%':'Needs review'}</b><span class=small>${escHtml(p.source)}</span></div><div class=metric>Flow phenotype<b>${o.flow.length}</b><span class=small>structured observation(s)</span></div><div class=metric>NGS<b>${o.mutations.filter(x=>x.result==='Positive').length}</b><span class=small>detected variant(s)</span></div><div class=metric>Cyto / FISH<b>${o.cytoObservations.length} / ${o.fishObservations.length}</b><span class=small>structured observation(s)</span></div></div>${warn.length?`<div class=warnbox style="margin-top:8px"><b>Review flags</b><br>${warn.map(x=>'• '+escHtml(x)).join('<br>')}</div>`:''}${smartEvidenceHtml(d)}<div class=tools><button class=btn onclick="reviewSmartDraft()">Review / edit structured draft</button></div></div>`
+}
+async function smartExtract(){
+ let text=$('smartSource').value.trim();if(!text){$('smartStage').innerHTML='<div class=warnbox>Paste source text first.</div>';return}let endpoint=$('smartEndpoint').value.trim()||localStorage.getItem('AML_SMART_ENDPOINT')||'',btn=$('smartExtractBtn');btn.disabled=true;btn.textContent='Extracting…';
+ try{
+   if(endpoint){let r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({schema_version:SMART_SCHEMA_VERSION,source_type:$('smartSourceType').value,marrow_date:$('smartDate').value||null,diagnostic:$('smartDiagnostic').checked,source_text:text,instructions:smartExtractionPrompt('')})});if(!r.ok)throw new Error(`Endpoint returned ${r.status}`);let d=normalizeSmartDraft(await r.json()),dis=compareSmartToLocal(d,text,$('smartSourceType').value);renderSmartStage(d,'AI-assisted extraction',dis)}
+   else{let d=normalizeSmartDraft(buildLocalSmartDraft(text,$('smartSourceType').value));renderSmartStage(d,'Local parser fallback',[])}
+ }catch(e){let d=normalizeSmartDraft(buildLocalSmartDraft(text,$('smartSourceType').value));renderSmartStage(d,'Local parser fallback',[`AI endpoint failed: ${e.message}`])}finally{btn.disabled=false;btn.textContent='Extract structured draft'}
+}
+async function copySmartPrompt(){let text=$('smartSource').value.trim();if(!text){alert('Paste source text first.');return}let p=smartExtractionPrompt(text);try{await navigator.clipboard.writeText(p);$('smartStage').innerHTML='<div class=good>AI extraction prompt copied. Paste the returned JSON into “Manual AI JSON handoff.”</div>'}catch(e){$('smartJson').value=p;alert('Clipboard access was unavailable; the extraction prompt was placed in the JSON box for manual copy.')}}
+function useSmartJson(){try{let d=normalizeSmartDraft(JSON.parse($('smartJson').value));let text=$('smartSource').value.trim(),dis=text?compareSmartToLocal(d,text,$('smartSourceType').value):[];renderSmartStage(d,'AI JSON handoff',dis)}catch(e){$('smartStage').innerHTML=`<div class=warnbox><b>Invalid AI JSON:</b> ${escHtml(e.message)}</div>`}}
+function reviewSmartDraft(){if(!smartDraftStage)return;marrowEditorDraftBase=cloneObj(smartDraftStage);openMarrowEditor(null,marrowEditorDraftBase)}
+function smartLoadDemo(){
+ $('smartDate').value='01/25/2024';$('smartDiagnostic').checked=true;$('smartSourceType').value='auto';$('smartSource').value=`PATHOLOGY / MORPHOLOGY\nPeripheral blood: Blasts 2%. Bone marrow aspirate is markedly hemodilute and aspicular. Aspirate differential estimates 3.5% blasts. CD34 IHC highlights approximately 20-25% blasts.\n\nFLOW CYTOMETRY\nAbnormal myeloid blasts comprise 30% of events and express CD34, CD117, dim CD38, CD33, dim CD13 and heterogeneous/dim CD7.\n\nCYTOGENETICS\n45~47,XY,t(3;19)(p21;q13.3),del(5)(q13q33),-20,add(21)(p11.2),add(22)(q22),+mar1[cp12]/45~48,idem,+3,-der(3)t(3;19)(p22;q13.3),+mar2[cp7]/46,XY[1]\nABNORMAL MALE KARYOTYPE\n\nFISH\nDeletion of 5q – Detected\nDeletion of 20q12 – Detected\nThree copies of RUNX1 – Detected\nt(8;21) – Not Detected\nRearrangement of 3q26 – Not Detected\nRearrangement of 11q23 – Not Detected\n\nNGS / MOLECULAR\nTP53 p.G244S VAF 43.05% Pathogenic\nTP53 p.P151S VAF 39.55% Pathogenic\nEZH2 p.M24T VAF 48.57% VUS`;
+ $('smartStage').innerHTML='<div class=info>Demo package loaded. Use the embedded endpoint if configured, or run the local-parser draft to test the workflow.</div>'
+}
+
 function quickMRDData(){
  let empty={mrd:'',mrdAssessed:'Not applicable',mrdMethods:[],mrdTarget:'',mrdOther:'',mrdValuePct:null,mrdLOD:null,mrdSpecimen:'Bone marrow',mrdLab:'Unknown'};
  if($('diag').checked)return empty;let assessed=$('qmrdAssessed').value||'No';if(assessed!=='Yes')return{...empty,mrd:assessed==='Unknown'?'Unknown':'Not performed',mrdAssessed:assessed};
@@ -858,6 +930,7 @@ function renderStructuredEditor(m){
    cyto:cloneObj(m?.cytoObservations||cytogeneticObservations(m?.raw?.cyto||'')).map(x=>({...x,keep:true})),
    fish:cloneObj(m?.fishObservations||fishparse(m?.raw?.fish||'')).map(x=>({...x,keep:true}))
  };
+ if($('rawEditSmart'))$('rawEditSmart').value=m?.raw?.smart||'';if($('rawSmartWrap'))$('rawSmartWrap').style.display=m?.raw?.smart?'block':'none';
  if($('rawEditPath'))$('rawEditPath').value=m?.raw?.path||'';
  if($('rawEditFlow'))$('rawEditFlow').value=m?.raw?.flow||'';
  if($('rawEditNGSPos'))$('rawEditNGSPos').value=m?.raw?.ngspos||'';
@@ -931,9 +1004,9 @@ function toggleEditorMRD(){
  if($('mrdEditFields'))$('mrdEditFields').style.display=diagnostic?'none':'block'
 }
 
-function openMarrowEditor(i=null){
- marrowEditIndex=i;let m=i===null?null:D.marrows[i];
- $('marrowEditorTitle').textContent=i===null?'Add BMBx manually':'Edit marrow';
+function openMarrowEditor(i=null,draft=null){
+ marrowEditIndex=i;let m=draft?cloneObj(draft):(i===null?null:D.marrows[i]);if(draft)marrowEditorDraftBase=cloneObj(draft);
+ $('marrowEditorTitle').textContent=draft?'Review Smart Import draft':i===null?'Add BMBx manually':'Edit marrow';
  $('meDate').value=m?.date?displayDate(m.date):'';$('meDiagnostic').checked=!!m?.diagnostic;
  $('meAspirate').value=m?.blastAspirate??'';$('meAspAdeq').value=m?.aspirateAdequacy||'Unknown';$('meFlow').value=m?.blastFlow??'';
  $('meFlowAdeq').value=m?.flowAdequate===false?'No':m?.flowAdequate===true?'Yes':'Unknown';
@@ -947,11 +1020,11 @@ function openMarrowEditor(i=null){
  updateBlastEditPreview();
  $('marrowEditor').style.display='block';$('marrowEditor').scrollIntoView({behavior:'smooth',block:'start'})
 }
-function closeMarrowEditor(){$('marrowEditor').style.display='none';marrowEditIndex=null;marrowStructuredDraft={flow:[],mutations:[],negatives:[],cyto:[],fish:[]}}
+function closeMarrowEditor(){$('marrowEditor').style.display='none';marrowEditIndex=null;marrowEditorDraftBase=null;marrowStructuredDraft={flow:[],mutations:[],negatives:[],cyto:[],fish:[]}}
 function saveMarrowEditor(){
  let rawDate=$('meDate').value;if(!rawDate){alert('Enter a marrow date.');return}let date=normalizeDateText(rawDate,'Marrow date');if(date===null)return
  let diagnostic=$('meDiagnostic').checked,existing=marrowEditIndex===null?null:D.marrows[marrowEditIndex];
- let o=existing||{id:'BM'+Date.now(),raw:{path:'',flow:'',cyto:'',fish:'',ngspos:'',ngstest:''},flow:[],mutations:[],fishObservations:[],cytoObservations:[],cytoHits:[],normalizedFindings:[],mrdAssessed:'Unknown',aspirateAdequacy:'Unknown',pb:'Unknown',pbBlastPct:null,emd:'Unknown',manualAnc:null,manualAncDate:'',manualPlt:null,manualPltDate:''};
+ let o=existing||cloneObj(marrowEditorDraftBase)||{id:'BM'+Date.now(),raw:{path:'',flow:'',cyto:'',fish:'',ngspos:'',ngstest:'',smart:''},flow:[],mutations:[],fishObservations:[],cytoObservations:[],cytoHits:[],normalizedFindings:[],mrdAssessed:'Unknown',aspirateAdequacy:'Unknown',pb:'Unknown',pbBlastPct:null,emd:'Unknown',manualAnc:null,manualAncDate:'',manualPlt:null,manualPltDate:''};
  o.date=date;o.diagnostic=diagnostic;o.blastAspirate=$('meAspirate').value===''?null:Number($('meAspirate').value);o.aspirateAdequacy=$('meAspAdeq').value||'Unknown';o.blastFlow=$('meFlow').value===''?null:Number($('meFlow').value);
  o.flowAdequate=$('meFlowAdeq').value==='Yes'?true:$('meFlowAdeq').value==='No'?false:null;o.preferredBlastManual=$('mePreferred').value===''?null:Number($('mePreferred').value);
  o.blastIhcLow=$('meIhcLow').value===''?null:Number($('meIhcLow').value);o.blastIhcHigh=$('meIhcHigh').value===''?o.blastIhcLow:Number($('meIhcHigh').value);
@@ -971,7 +1044,7 @@ function saveMarrowEditor(){
    o.mrdMethods=[['mrdMFC','MFC'],['mrdPCR','PCR/qPCR/dPCR'],['mrdNGS','NGS'],['mrdOther','Other']].filter(([id])=>$(id).checked).map(([,v])=>v);
    o.mrdTarget=$('meMRDTarget').value;o.mrdOther=$('meMRDOther').value;o.mrdValuePct=$('meMRDValuePct').value===''?null:Number($('meMRDValuePct').value);o.mrdLOD=$('meMRDLOD').value===''?null:Number($('meMRDLOD').value);o.mrdSpecimen=$('meMRDSpecimen').value||'Unknown';o.mrdLab=$('meMRDLab').value||'Unknown';
  }
- o.manualNotes=$('meNotes').value;o.source=existing?.source||'manual abstraction';
+ o.manualNotes=$('meNotes').value;o.source=existing?.source||o.source||'manual abstraction';
  if(diagnostic){D.marrows.forEach((x,j)=>{if(j!==marrowEditIndex)x.diagnostic=false});syncDxFromDiagnostic(date)}
  if(marrowEditIndex===null){
    let same=D.marrows.findIndex(x=>x.date===date);
@@ -1192,20 +1265,20 @@ function markerAutoStatus(m,key){
  let pos=(m.mutations||[]).filter(x=>x.result==='Positive'&&x.classification!=='VUS'),neg=(m.mutations||[]).filter(x=>x.result==='Negative');
  let raw=[m.raw?.ngspos,m.raw?.ngstest,...pos.map(x=>x.raw_description||'')].join('\n');
  if(key==='FLT3-ITD'){
-   if(pos.some(x=>x.gene==='FLT3'&&/\bITD\b|internal tandem/i.test([x.protein,x.cdna,x.raw_description].join(' '))))return{status:'Positive',evidence:'FLT3-ITD detected'};
-   if(/\bFLT3[-\s]?ITD\b[^.\n]{0,50}(?:not detected|negative|wild[- ]?type)/i.test(raw))return{status:'Negative',evidence:'FLT3-ITD explicitly negative'};
+   if(pos.some(x=>x.gene==='FLT3-ITD')||pos.some(x=>x.gene==='FLT3'&&/\bITD\b|internal tandem/i.test([x.protein,x.cdna,x.raw_description].join(' '))))return{status:'Positive',evidence:'FLT3-ITD detected'};
+   if(neg.some(x=>x.gene==='FLT3-ITD')||/\bFLT3[-\s]?ITD\b[^.\n]{0,50}(?:not detected|negative|wild[- ]?type)/i.test(raw))return{status:'Negative',evidence:'FLT3-ITD explicitly negative'};
    return{status:'Unknown',evidence:'Generic FLT3 testing does not establish ITD result'}
  }
  if(key==='FLT3-TKD'){
-   if(pos.some(x=>x.gene==='FLT3'&&/\bTKD\b|D835|I836|tyrosine kinase domain/i.test([x.protein,x.cdna,x.raw_description].join(' '))))return{status:'Positive',evidence:'FLT3-TKD detected'};
-   if(/\bFLT3[-\s]?TKD\b[^.\n]{0,50}(?:not detected|negative|wild[- ]?type)/i.test(raw))return{status:'Negative',evidence:'FLT3-TKD explicitly negative'};
+   if(pos.some(x=>x.gene==='FLT3-TKD')||pos.some(x=>x.gene==='FLT3'&&/\bTKD\b|D835|I836|tyrosine kinase domain/i.test([x.protein,x.cdna,x.raw_description].join(' '))))return{status:'Positive',evidence:'FLT3-TKD detected'};
+   if(neg.some(x=>x.gene==='FLT3-TKD')||/\bFLT3[-\s]?TKD\b[^.\n]{0,50}(?:not detected|negative|wild[- ]?type)/i.test(raw))return{status:'Negative',evidence:'FLT3-TKD explicitly negative'};
    return{status:'Unknown',evidence:'Generic FLT3 testing does not establish TKD result'}
  }
  if(key==='KMT2A'){
-   if((m.fishObservations||[]).some(x=>x.result==='Positive'&&/KMT2A|11q23/i.test(x.target||''))||pos.some(x=>x.gene==='KMT2A'&&/rearrange|fusion|::/i.test(x.raw_description||'')))return{status:'Positive',evidence:'KMT2A rearrangement/fusion detected'};
-   if(neg.some(x=>x.gene==='KMT2A')||(m.fishObservations||[]).some(x=>x.result==='Negative'&&/KMT2A|11q23/i.test(x.target||'')))return{status:'Negative',evidence:'KMT2A explicitly tested negative'};
-   if(pos.some(x=>x.gene==='KMT2A'))return{status:'Unknown',evidence:'KMT2A sequence variant present but rearrangement status not established'};
-   return{status:'Unknown',evidence:'Not explicitly tested'}
+   if((m.fishObservations||[]).some(x=>x.result==='Positive'&&/KMT2A|11q23/i.test(x.target||''))||pos.some(x=>/^(?:KMT2A[- ]?REARRANGEMENT|KMT2A::)/i.test(x.gene||'')||x.gene==='KMT2A'&&/rearrange|fusion|::/i.test(x.raw_description||'')))return{status:'Positive',evidence:'KMT2A rearrangement/fusion detected'};
+   if((m.fishObservations||[]).some(x=>x.result==='Negative'&&/KMT2A|11q23/i.test(x.target||''))||neg.some(x=>/KMT2A[- ]?REARRANGEMENT/i.test(x.gene||'')))return{status:'Negative',evidence:'KMT2A rearrangement explicitly negative'};
+   if(pos.some(x=>x.gene==='KMT2A')||neg.some(x=>x.gene==='KMT2A'))return{status:'Unknown',evidence:'KMT2A sequence-level testing does not establish rearrangement status'};
+   return{status:'Unknown',evidence:'KMT2A rearrangement not explicitly tested'}
  }
  if(pos.some(x=>x.gene===key))return{status:'Positive',evidence:`${key} detected`};
  if(neg.some(x=>x.gene===key))return{status:'Negative',evidence:`${key} explicitly assayed and not detected`};
@@ -1486,11 +1559,11 @@ function render(){
  ev.sort((a,b)=>a[0].localeCompare(b[0]));$('tl').innerHTML=ev.map(x=>`<div class=event><b>${displayDate(x[0])}</b><div>${x[1]}</div></div>`).join('')||'<p class=help>No dated events.</p>'
 }
 function dl(n,t,type='text/plain'){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type}));a.download=n;a.click()}
-function jsonOut(){dl((D.base.study||'AML-demo')+'_V3.1.json',JSON.stringify(D,null,2),'application/json')}
+function jsonOut(){dl((D.base.study||'AML-demo')+'_V3.2.json',JSON.stringify(D,null,2),'application/json')}
 function csv(rows){if(!rows.length)return'';let k=[...new Set(rows.flatMap(Object.keys))];return[k.join(','),...rows.map(r=>k.map(x=>`"${String(r[x]??'').replaceAll('"','""')}"`).join(','))].join('\n')}
 function csvOut(k){
  let r=k==='cycles'?D.cycles.map(x=>({study_id:D.base.study,...x})):
- k==='marrows'?D.marrows.map(x=>{let pb=preferredBlast(x),rw=responseWindow(x);return{study_id:D.base.study,marrow_id:x.id,date:x.date,diagnostic:x.diagnostic,blast_aspirate:x.blastAspirate,blast_flow:x.blastFlow,blast_ihc_low:x.blastIhcLow,blast_ihc_high:x.blastIhcHigh,preferred_blast:pb.value,preferred_blast_source:pb.source,peripheral_blood_blasts:x.pb||'',extramedullary_disease:x.emd||'',mrd_status:x.mrd||'',mrd_methods:(x.mrdMethods||[]).join('; '),mrd_target:x.mrdTarget||'',mrd_value_pct:x.mrdValuePct,mrd_lod_pct:x.mrdLOD,mrd_specimen:x.mrdSpecimen||'',mrd_lab:x.mrdLab||'',mrd_other:x.mrdOther||'',marrow_note:x.manualNotes||'',cytogenetic_category:deriveCytogenetics(x).category,cytogenetic_observations_json:JSON.stringify(x.cytoObservations||cytogeneticObservations(x.raw?.cyto||'')),mr_cytogenetic_abnormalities_json:JSON.stringify(mrCytoComposite(x.raw?.cyto||'',deriveCytogenetics(x))),ngs_variants_json:JSON.stringify((x.mutations||[]).filter(v=>v.result==='Positive')),fish_observations_json:JSON.stringify(x.fishObservations||fishparse(x.raw?.fish||'')),calculated_response:classifyResponse(x),response_window_mode:rw.mode,response_window_end:rw.end,cycle:cyc(x.date)?.n||''}}):
+ k==='marrows'?D.marrows.map(x=>{let pb=preferredBlast(x),rw=responseWindow(x);return{study_id:D.base.study,marrow_id:x.id,date:x.date,diagnostic:x.diagnostic,blast_aspirate:x.blastAspirate,blast_flow:x.blastFlow,blast_ihc_low:x.blastIhcLow,blast_ihc_high:x.blastIhcHigh,preferred_blast:pb.value,preferred_blast_source:pb.source,peripheral_blood_blasts:x.pb||'',extramedullary_disease:x.emd||'',mrd_status:x.mrd||'',mrd_methods:(x.mrdMethods||[]).join('; '),mrd_target:x.mrdTarget||'',mrd_value_pct:x.mrdValuePct,mrd_lod_pct:x.mrdLOD,mrd_specimen:x.mrdSpecimen||'',mrd_lab:x.mrdLab||'',mrd_other:x.mrdOther||'',marrow_note:x.manualNotes||'',extraction_method:x.extractionMethod||x.source||'',extraction_warnings_json:JSON.stringify(x.extractionWarnings||[]),extraction_evidence_json:JSON.stringify(x.extractionEvidence||{}),cytogenetic_category:deriveCytogenetics(x).category,cytogenetic_observations_json:JSON.stringify(x.cytoObservations||cytogeneticObservations(x.raw?.cyto||'')),mr_cytogenetic_abnormalities_json:JSON.stringify(mrCytoComposite(x.raw?.cyto||'',deriveCytogenetics(x))),ngs_variants_json:JSON.stringify((x.mutations||[]).filter(v=>v.result==='Positive')),fish_observations_json:JSON.stringify(x.fishObservations||fishparse(x.raw?.fish||'')),calculated_response:classifyResponse(x),response_window_mode:rw.mode,response_window_end:rw.end,cycle:cyc(x.date)?.n||''}}):
  k==='cbc'?D.cbc.map(x=>({study_id:D.base.study,...x})):
  k==='cytogenetics'?D.marrows.flatMap(m=>{
    let derived=deriveCytogenetics(m),mr=mrCytoComposite(m.raw?.cyto||'',derived);
@@ -1505,7 +1578,7 @@ function csvOut(k){
  dl(k+'.csv',csv(r),'text/csv')
 }
 function resetAll(){if(confirm('Clear locally stored demo data?')){localStorage.removeItem(K);location.reload()}}
-render();toggleQuickMRD();
+if($('smartEndpoint'))$('smartEndpoint').value=localStorage.getItem('AML_SMART_ENDPOINT')||'';render();toggleQuickMRD();
 </script>
 </body>
 </html>
