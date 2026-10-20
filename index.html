@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AML AZA/VEN Tracker V2.10</title>
+<title>AML AZA/VEN Tracker V3.0</title>
 <style>
 :root{
   --bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#667085;--line:#dde3ec;
@@ -43,7 +43,7 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 </style>
 </head>
 <body>
-<header><h1>AML AZA/VEN Longitudinal Tracker V2.10</h1><div class="sub" id="hdr">No patient selected</div></header>
+<header><h1>AML AZA/VEN Longitudinal Tracker V3.0</h1><div class="sub" id="hdr">No patient selected</div></header>
 <div class="demo"><b>DEMO / FAKE DATA ONLY.</b> Static GitHub prototype. Do not enter names, MRNs, DOBs, or PHI.</div>
 <div class="wrap"><div class="layout">
 <nav>
@@ -84,7 +84,8 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 <div id="quickMRDWrap" class="mutedbox" style="margin-top:10px">
 <div class="row two"><div><label>MRD assessed?</label><select id="qmrdAssessed" onchange="toggleQuickMRD()"><option value="No">No</option><option value="Yes">Yes</option><option value="Unknown">Unknown</option></select></div><div class="small" style="padding-top:28px">Hidden for diagnostic marrows. Detailed MRD fields appear only when assessed.</div></div>
 <div id="quickMRDDetails" style="display:none">
-<div class="row two"><div><label>MRD status</label><select id="qmrdStatus"><option>Negative</option><option>Positive</option><option>Indeterminate</option></select></div><div><label>MRD target / result (optional)</label><input id="qmrdTarget" placeholder="e.g. NPM1; RUNX1::RUNX1T1; 0.08%"></div></div>
+<div class="row"><div><label>MRD status</label><select id="qmrdStatus"><option>Negative</option><option>Positive</option><option>Indeterminate</option></select></div><div><label>MRD target (optional)</label><input id="qmrdTarget" placeholder="e.g. NPM1; RUNX1::RUNX1T1"></div><div><label>MRD numeric result %</label><input type="number" step="0.0001" id="qmrdValuePct"></div></div>
+<div class="row"><div><label>Assay LOD / sensitivity %</label><input type="number" step="0.0001" id="qmrdLOD"></div><div><label>Specimen</label><select id="qmrdSpecimen"><option>Bone marrow</option><option>Peripheral blood</option><option>Other</option><option>Unknown</option></select></div><div><label>Laboratory</label><select id="qmrdLab"><option>Unknown</option><option>Local</option><option>Central</option></select></div></div>
 <label>MRD method(s)</label><div>
 <label style="display:inline-flex;align-items:center;margin-right:14px;font-weight:400"><input type="checkbox" id="qmrdMFC" style="width:auto;margin-right:5px"> MFC</label>
 <label style="display:inline-flex;align-items:center;margin-right:14px;font-weight:400"><input type="checkbox" id="qmrdPCR" style="width:auto;margin-right:5px"> PCR/qPCR/dPCR</label>
@@ -110,7 +111,12 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 </div>
 <div class="card"><h3>Calculated diagnostic classification</h3>
 <div class="row"><div class="metric">Baseline blasts<b id="bb">—</b><span class="small" id="bbsrc"></span></div><div class="metric">ELN 2022<b id="e22">Pending</b><span class="small" id="e22w"></span></div><div class="metric">ELN 2024 Less-Intensive<b id="e24">Pending</b><span class="small" id="e24w"></span></div></div>
-<p class="help">ELN risk logic and source-text parsers remain prototype implementations and require formal validation before production research use.</p>
+<p class="help">ELN 2022 and ELN 2024 Less-Intensive are calculated independently. Unknown assay coverage remains Unknown rather than being assumed negative.</p>
+</div>
+
+<div class="card"><h3>Key molecular marker status</h3>
+<p class="help">Auto-derived when possible. FLT3-ITD and FLT3-TKD are tracked separately. Override only when the source report explicitly establishes the result.</p>
+<div id="markerStatusCard"></div>
 </div>
 
 <div class="card"><h3>Baseline CBC</h3>
@@ -129,14 +135,16 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 </section>
 
 <section id="cycles">
-<div class="card"><h2>Treatment Cycles</h2><p class="help">Cycle and VEN dates use the same calendar input as Quick Import. Regimen defaults auto-fill both planned and received days; all remain editable.</p><div id="clist"></div><button class="btn" onclick="addCycle()">+ Add cycle</button></div>
+<div class="card"><h2>Treatment Cycles</h2><p class="help">Cycle numbering is derived from chronological start dates, not entry order. Stable record IDs are preserved as cycles re-sort.</p>
+<div class="tools"><button class="btn" onclick="addCycle()">+ Add cycle</button><button class="btn alt" onclick="toggleAllRecordCards('cycle',true)">Expand all</button><button class="btn alt" onclick="toggleAllRecordCards('cycle',false)">Collapse all</button></div>
+<div id="clist"></div></div>
 </section>
 
 <section id="marrows">
-<div class="card"><h2>Bone Marrows</h2><p class="help">Use Quick Import when original reports are available, or add/edit marrows manually. Multiple true marrows in the same cycle are supported.</p>
-<div class="tools"><button class="btn" onclick="openMarrowEditor()">+ Add marrow manually</button></div>
+<div class="card"><h2>Bone Marrows</h2><p class="help">BMBx numbering is derived from marrow date, not entry order. Multiple true marrows on the same date remain separate stable records.</p>
+<div class="tools"><button class="btn" onclick="openMarrowEditor()">+ Add BMBx manually</button><button class="btn alt" onclick="toggleAllRecordCards('bmbx',true)">Expand all</button><button class="btn alt" onclick="toggleAllRecordCards('bmbx',false)">Collapse all</button></div>
 <div id="marrowEditor" class="card" style="display:none;margin-top:12px;background:#f8faff">
-<h3 id="marrowEditorTitle">Add marrow manually</h3>
+<h3 id="marrowEditorTitle">Add BMBx manually</h3>
 <div class="row two"><div><label>Marrow date</label><input type="text" id="meDate" placeholder="MM/DD/YYYY"></div><div class="inline-check"><input type="checkbox" id="meDiagnostic" onchange="toggleEditorMRD()"><label for="meDiagnostic" style="margin:0">Diagnostic / baseline marrow</label></div></div>
 <div class="row"><div><label>Peripheral blood blasts</label><select id="mePB"><option>Unknown</option><option>Absent</option><option>Present</option></select></div><div><label>Peripheral blood blast % (optional)</label><input type="number" step="0.1" id="mePBPct"></div><div><label>Extramedullary disease</label><select id="meEMD"><option>Unknown</option><option>Absent/resolved</option><option>Present</option></select></div></div>
 
@@ -190,7 +198,8 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 <div id="mrdDiagnosticNote" class="small" style="display:none;margin-top:8px">MRD is not applicable to the diagnostic marrow.</div>
 <div id="mrdEditFields" style="margin-top:8px">
 <details style="margin-bottom:8px"><summary class="small">Show MRD source / note</summary><textarea id="rawEditMRD" readonly class="notes" style="margin-top:6px;min-height:90px"></textarea></details>
-<div class="row two"><div><label>MRD status</label><select id="meMRD"><option></option><option>Negative</option><option>Positive</option><option>Indeterminate</option><option>Not performed</option><option>Unknown</option></select></div><div><label>MRD target / result (optional)</label><input id="meMRDTarget" placeholder="e.g. NPM1; RUNX1::RUNX1T1; 0.08%"></div></div>
+<div class="row"><div><label>MRD status</label><select id="meMRD"><option></option><option>Negative</option><option>Positive</option><option>Indeterminate</option><option>Not performed</option><option>Unknown</option></select></div><div><label>MRD target (optional)</label><input id="meMRDTarget" placeholder="e.g. NPM1; RUNX1::RUNX1T1"></div><div><label>MRD numeric result %</label><input type="number" step="0.0001" id="meMRDValuePct"></div></div>
+<div class="row"><div><label>Assay LOD / sensitivity %</label><input type="number" step="0.0001" id="meMRDLOD"></div><div><label>Specimen</label><select id="meMRDSpecimen"><option>Bone marrow</option><option>Peripheral blood</option><option>Other</option><option>Unknown</option></select></div><div><label>Laboratory</label><select id="meMRDLab"><option>Unknown</option><option>Local</option><option>Central</option></select></div></div>
 <label>MRD method(s)</label><div>
 <label style="display:inline-flex;align-items:center;margin-right:14px;font-weight:400"><input type="checkbox" id="mrdMFC" style="width:auto;margin-right:5px"> MFC</label>
 <label style="display:inline-flex;align-items:center;margin-right:14px;font-weight:400"><input type="checkbox" id="mrdPCR" style="width:auto;margin-right:5px"> PCR/qPCR/dPCR</label>
@@ -204,7 +213,7 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 </div></details>
 
 <label style="margin-top:12px">Marrow notes / adjudication note (optional)</label><textarea id="meNotes" class="notes"></textarea>
-<div class="actions"><button class="btn" onclick="saveMarrowEditor()">Save marrow</button><button class="btn alt" onclick="closeMarrowEditor()">Cancel</button></div>
+<div class="actions"><button class="btn" onclick="saveMarrowEditor()">Save BMBx</button><button class="btn alt" onclick="closeMarrowEditor()">Cancel</button></div>
 </div>
 <div id="bmlist" style="margin-top:12px"></div></div>
 </section>
@@ -235,8 +244,8 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 </main></div></div>
 
 <script>
-const K='AML_AV_V210';
-let D=JSON.parse(localStorage.getItem(K)||'null')||{
+const K='AML_AV_V30';
+let D=JSON.parse(localStorage.getItem(K)||localStorage.getItem('AML_AV_V210')||'null')||{
   base:{},cycles:[],marrows:[],cbc:[],
   out:{relapse_date_auto:'',relapse_date_final:'',relapse_basis:'',relapse_overridden:false},
   audit:[]
@@ -244,7 +253,7 @@ let D=JSON.parse(localStorage.getItem(K)||'null')||{
 const $=x=>document.getElementById(x);
 const dt=x=>x?new Date((x.length>10?x:x+'T12:00:00')):null;
 const dd=(a,b)=>a&&b?Math.round((dt(b)-dt(a))/86400000):null;
-const addDays=(d,n)=>{let x=dt(d);x.setDate(x.getDate()+n);return x.toISOString().slice(0,10)};
+const addDays=(d,n)=>{if(!d)return'';let [y,m,day]=String(d).slice(0,10).split('-').map(Number),x=new Date(y,m-1,day+Number(n||0),12,0,0);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`};
 const displayDate=d=>{if(!d)return'';let [y,m,day]=d.slice(0,10).split('-');return `${m}/${day}/${y}`};
 const dxday=d=>{
   if(!D.base.dx||!d)return'';
@@ -252,7 +261,24 @@ const dxday=d=>{
   return n<0?`Dx−${Math.abs(n)}`:`Dx+${n}`
 };
 
-function save(){localStorage.setItem(K,JSON.stringify(D));render()}
+
+const openCycleCards=new Set(),openBmbxCards=new Set();
+function chronologySort(){
+ D.cycles.sort((a,b)=>{
+   if(a.start&&b.start){let c=a.start.localeCompare(b.start);if(c)return c}
+   else if(a.start&&!b.start)return-1;
+   else if(!a.start&&b.start)return 1;
+   return String(a.id||'').localeCompare(String(b.id||''))
+ });
+ let n=0;D.cycles.forEach(c=>{c.n=c.start?++n:null});
+ D.marrows.sort((a,b)=>String(a.date||'9999-99-99').localeCompare(String(b.date||'9999-99-99'))||String(a.id||'').localeCompare(String(b.id||'')))
+}
+function cycleLabel(c){return c?.start&&c?.n?`Cycle ${c.n}`:'Unscheduled cycle'}
+function rememberRecordCard(kind,id,isOpen){let s=kind==='cycle'?openCycleCards:openBmbxCards;if(isOpen)s.add(id);else s.delete(id)}
+function rememberRecordCardOpenSafe(kind,id,isOpen){setTimeout(()=>rememberRecordCard(kind,id,isOpen),0)}
+function toggleAllRecordCards(kind,open){let s=kind==='cycle'?openCycleCards:openBmbxCards,rows=kind==='cycle'?D.cycles:D.marrows;s.clear();if(open)rows.forEach(x=>s.add(x.id));render()}
+
+function save(){chronologySort();localStorage.setItem(K,JSON.stringify(D));render()}
 function log(action,detail){D.audit.push({ts:new Date().toISOString(),action,detail})}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));document.querySelectorAll('section').forEach(x=>x.classList.remove('on'));b.classList.add('on');$(b.dataset.t).classList.add('on');render()})
 
@@ -324,9 +350,9 @@ function hmaDefault(hma){
  return 7;
 }
 function addCycle(){
- let p=D.cycles.at(-1)||{},hma=p.hma||'Azacitidine',hd=hmaDefault(hma);
- D.cycles.push({id:'C'+Date.now(),n:D.cycles.length+1,start:'',hma,hmaPlanned:hd,hmaActual:hd,venStart:'',venPlanned:28,venActual:28,venEnd:'',gcsf:'',delay:'No',delayReasons:[],venHold:'No',heldDays:0,shortenedReason:'',notes:''});
- save()
+ chronologySort();let p=D.cycles.filter(x=>x.start).at(-1)||D.cycles.at(-1)||{},hma=p.hma||'Azacitidine',hd=hmaDefault(hma),vc=Number.isFinite(Number(p.venActual))?Number(p.venActual):28;
+ let c={id:'C'+Date.now(),n:null,start:'',hma,hmaPlanned:hd,hmaActual:hd,venStart:'',venPlanned:vc,venActual:vc,venEnd:'',gcsf:'',delay:'No',delayReasons:[],venHold:'No',heldDays:0,shortenedReason:'',notes:'',venCarryAuto:true};
+ D.cycles.push(c);openCycleCards.add(c.id);save()
 }
 function calcVenEnd(c){
  if(!c.venStart||!Number(c.venActual)||Number(c.venActual)<1)return'';
@@ -337,8 +363,9 @@ function cycleDateText(i,k,raw){
  let d=normalizeDateText(raw,k==='start'?'Cycle start':'VEN start');if(raw&&d===null){render();return}
  let c=D.cycles[i];c[k]=d||'';
  if(k==='start'&&!c.venStart)c.venStart=d||'';
+ if(k==='start'){chronologySort();let j=D.cycles.findIndex(x=>x.id===c.id),p=[...D.cycles.slice(0,j)].reverse().find(x=>x.start);if(c.venCarryAuto&&p&&Number.isFinite(Number(p.venActual))){c.venPlanned=Number(p.venActual);c.venActual=Number(p.venActual)}}
  if(k==='start'||k==='venStart')c.venEnd=calcVenEnd(c);
- save()
+ openCycleCards.add(c.id);save()
 }
 function cycleField(i,k,v){
  let c=D.cycles[i];
@@ -348,6 +375,8 @@ function cycleField(i,k,v){
    let actualDefault=c.hmaActual===''||c.hmaActual==null||Number(c.hmaActual)===oldDefault;
    c.hma=v;if(plannedDefault)c.hmaPlanned=newDefault;if(actualDefault)c.hmaActual=newDefault;
  }else c[k]=v;
+ if(['venPlanned','venActual'].includes(k))c.venCarryAuto=false;
+ openCycleCards.add(c.id);
  if(['venActual','venHold','heldDays'].includes(k))c.venEnd=calcVenEnd(c);
  save()
 }
@@ -368,8 +397,8 @@ function cycleEndText(i,raw){
 }
 function setVenStartToCycle(i){D.cycles[i].venStart=D.cycles[i].start;D.cycles[i].venEnd=calcVenEnd(D.cycles[i]);save()}
 function delCycle(i){
- if(!confirm(`Delete Cycle ${D.cycles[i].n}? Subsequent cycles will be renumbered and marrow assignments recalculated.`))return;
- log('delete_cycle',D.cycles[i]);D.cycles.splice(i,1);D.cycles.forEach((c,j)=>c.n=j+1);save()
+ let c=D.cycles[i];if(!confirm(`Delete ${cycleLabel(c)}? Remaining cycles will be re-sorted and renumbered chronologically.`))return;
+ log('delete_cycle',c);openCycleCards.delete(c.id);D.cycles.splice(i,1);save()
 }
 function cyc(d){
  if(!d)return null;let date=d.slice(0,10),a=D.cycles.filter(x=>x.start).sort((x,y)=>x.start.localeCompare(y.start)),h=null;
@@ -504,15 +533,14 @@ function extractBlastData(path,flow){
 }
 function preferredBlast(m){
  if(m.preferredBlastManual!==null&&m.preferredBlastManual!==undefined&&m.preferredBlastManual!=='')return{value:Number(m.preferredBlastManual),source:'Manual adjudication',indeterminate:false};
- if(m.blastFlow!=null&&m.flowAdequate!==false)return{value:Number(m.blastFlow),source:'Flow cytometry (adequate)',indeterminate:false};
- let aspLimited=/Hemodilute|Aspicular|aparticulate/i.test(m.aspirateAdequacy||'');
- if(m.blastAspirate!=null&&!aspLimited)return{value:Number(m.blastAspirate),source:'Aspirate/manual differential',indeterminate:false};
+ let limited=/Hemodilute|Aspicular|aparticulate/i.test(m.aspirateAdequacy||'');
+ if(m.blastAspirate!=null&&!limited)return{value:Number(m.blastAspirate),source:'Aspirate/manual differential (adequate morphology)',indeterminate:false};
  if(m.blastIhcLow!=null&&m.blastIhcHigh!=null){
    if(Number(m.blastIhcLow)===Number(m.blastIhcHigh))return{value:Number(m.blastIhcLow),source:'Core/IHC',indeterminate:false};
-   let crosses5=Number(m.blastIhcLow)<5&&Number(m.blastIhcHigh)>=5;
-   if(crosses5)return{value:null,source:`Core/IHC range ${m.blastIhcLow}–${m.blastIhcHigh}% crosses 5% threshold`,indeterminate:true};
+   if(Number(m.blastIhcLow)<5&&Number(m.blastIhcHigh)>=5)return{value:null,source:`Core/IHC range ${m.blastIhcLow}–${m.blastIhcHigh}% crosses 5% threshold`,indeterminate:true};
    return{value:Number(m.blastIhcHigh),source:`Core/IHC range ${m.blastIhcLow}–${m.blastIhcHigh}% (upper bound used)`,indeterminate:false};
  }
+ if(m.blastFlow!=null&&m.flowAdequate!==false)return{value:Number(m.blastFlow),source:'Flow cytometry crosscheck (morphology unavailable/limited)',indeterminate:false};
  if(m.blastAspirate!=null)return{value:Number(m.blastAspirate),source:`Aspirate/manual differential (${m.aspirateAdequacy||'limited'}; adjudication recommended)`,indeterminate:true};
  return{value:null,source:'No structured blast source',indeterminate:true}
 }
@@ -691,14 +719,9 @@ function toggleQuickMRD(){
  details.style.display=(!diagnostic&&assessed==='Yes')?'block':'none'
 }
 function quickMRDData(){
- if($('diag').checked)return{mrd:'',mrdAssessed:'Not applicable',mrdMethods:[],mrdTarget:'',mrdOther:''};
- let assessed=$('qmrdAssessed').value||'No';
- if(assessed!=='Yes')return{mrd:assessed==='Unknown'?'Unknown':'Not performed',mrdAssessed:assessed,mrdMethods:[],mrdTarget:'',mrdOther:''};
- return{
-   mrd:$('qmrdStatus').value||'Unknown',mrdAssessed:'Yes',
-   mrdMethods:[['qmrdMFC','MFC'],['qmrdPCR','PCR/qPCR/dPCR'],['qmrdNGS','NGS'],['qmrdOther','Other']].filter(([id])=>$(id).checked).map(([,v])=>v),
-   mrdTarget:$('qmrdTarget').value||'',mrdOther:$('qmrdOtherText').value||''
- }
+ let empty={mrd:'',mrdAssessed:'Not applicable',mrdMethods:[],mrdTarget:'',mrdOther:'',mrdValuePct:null,mrdLOD:null,mrdSpecimen:'Bone marrow',mrdLab:'Unknown'};
+ if($('diag').checked)return empty;let assessed=$('qmrdAssessed').value||'No';if(assessed!=='Yes')return{...empty,mrd:assessed==='Unknown'?'Unknown':'Not performed',mrdAssessed:assessed};
+ return{mrd:$('qmrdStatus').value||'Unknown',mrdAssessed:'Yes',mrdMethods:[['qmrdMFC','MFC'],['qmrdPCR','PCR/qPCR/dPCR'],['qmrdNGS','NGS'],['qmrdOther','Other']].filter(([id])=>$(id).checked).map(([,v])=>v),mrdTarget:$('qmrdTarget').value||'',mrdOther:$('qmrdOtherText').value||'',mrdValuePct:$('qmrdValuePct').value===''?null:Number($('qmrdValuePct').value),mrdLOD:$('qmrdLOD').value===''?null:Number($('qmrdLOD').value),mrdSpecimen:$('qmrdSpecimen').value||'Unknown',mrdLab:$('qmrdLab').value||'Unknown'}
 }
 
 function extractBM(){
@@ -707,7 +730,7 @@ function extractBM(){
  let path=$('path').value,bd=extractBlastData(path,$('flow').value),qm=quickMRDData(),pbd=extractPBBlastData(path),aspAdeq=extractAspirateAdequacy(path);
  let o={id:'BM'+Date.now(),date:bmDate,diagnostic:$('diag').checked,
  blastAspirate:bd.aspirate,blastFlow:bd.flow,blastIhcLow:bd.ihcLow,blastIhcHigh:bd.ihcHigh,flowAdequate:true,flowPossibleUnparsed:bd.flowPossibleUnparsed,preferredBlastManual:null,aspirateAdequacy:aspAdeq,
- pb:pbd.status,pbBlastPct:pbd.pct,emd:'Unknown',mrd:qm.mrd,mrdAssessed:qm.mrdAssessed,mrdMethods:qm.mrdMethods,mrdTarget:qm.mrdTarget,mrdOther:qm.mrdOther,
+ pb:pbd.status,pbBlastPct:pbd.pct,emd:'Unknown',mrd:qm.mrd,mrdAssessed:qm.mrdAssessed,mrdMethods:qm.mrdMethods,mrdTarget:qm.mrdTarget,mrdOther:qm.mrdOther,mrdValuePct:qm.mrdValuePct,mrdLOD:qm.mrdLOD,mrdSpecimen:qm.mrdSpecimen,mrdLab:qm.mrdLab,
  raw:{path,flow:$('flow').value,cyto:$('cyto').value,fish:$('fish').value,ngspos:$('ngspos').value,ngstest:$('ngstest').value},
  flow:flowparse($('flow').value),mutations:muts($('ngspos').value,$('ngstest').value),fishObservations:fishparse($('fish').value),
  cytoObservations:cytogeneticObservations($('cyto').value),
@@ -910,7 +933,7 @@ function toggleEditorMRD(){
 
 function openMarrowEditor(i=null){
  marrowEditIndex=i;let m=i===null?null:D.marrows[i];
- $('marrowEditorTitle').textContent=i===null?'Add marrow manually':'Edit marrow';
+ $('marrowEditorTitle').textContent=i===null?'Add BMBx manually':'Edit marrow';
  $('meDate').value=m?.date?displayDate(m.date):'';$('meDiagnostic').checked=!!m?.diagnostic;
  $('meAspirate').value=m?.blastAspirate??'';$('meAspAdeq').value=m?.aspirateAdequacy||'Unknown';$('meFlow').value=m?.blastFlow??'';
  $('meFlowAdeq').value=m?.flowAdequate===false?'No':m?.flowAdequate===true?'Yes':'Unknown';
@@ -919,7 +942,7 @@ function openMarrowEditor(i=null){
  renderStructuredEditor(m);
  $('meMRD').value=m?.mrd||'';
  let mm=m?.mrdMethods||[];$('mrdMFC').checked=mm.includes('MFC');$('mrdPCR').checked=mm.includes('PCR/qPCR/dPCR');$('mrdNGS').checked=mm.includes('NGS');$('mrdOther').checked=mm.includes('Other');
- $('meMRDTarget').value=m?.mrdTarget||'';$('meMRDOther').value=m?.mrdOther||'';$('meNotes').value=m?.manualNotes||'';
+ $('meMRDTarget').value=m?.mrdTarget||'';$('meMRDOther').value=m?.mrdOther||'';$('meMRDValuePct').value=m?.mrdValuePct??'';$('meMRDLOD').value=m?.mrdLOD??'';$('meMRDSpecimen').value=m?.mrdSpecimen||'Bone marrow';$('meMRDLab').value=m?.mrdLab||'Unknown';$('meNotes').value=m?.manualNotes||'';
  toggleEditorMRD();
  updateBlastEditPreview();
  $('marrowEditor').style.display='block';$('marrowEditor').scrollIntoView({behavior:'smooth',block:'start'})
@@ -942,11 +965,11 @@ function saveMarrowEditor(){
  o.cytoHits=structuredCytoHits(o.cytoObservations,o.fishObservations);
  o.normalizedFindings=normalizedPositiveFindings(o);
  if(diagnostic){
-   o.mrd='';o.mrdAssessed='Not applicable';o.mrdMethods=[];o.mrdTarget='';o.mrdOther='';
+   o.mrd='';o.mrdAssessed='Not applicable';o.mrdMethods=[];o.mrdTarget='';o.mrdOther='';o.mrdValuePct=null;o.mrdLOD=null;o.mrdSpecimen='Bone marrow';o.mrdLab='Unknown';
  }else{
    o.mrd=$('meMRD').value||'Unknown';o.mrdAssessed=o.mrd==='Not performed'?'No':'Yes';
    o.mrdMethods=[['mrdMFC','MFC'],['mrdPCR','PCR/qPCR/dPCR'],['mrdNGS','NGS'],['mrdOther','Other']].filter(([id])=>$(id).checked).map(([,v])=>v);
-   o.mrdTarget=$('meMRDTarget').value;o.mrdOther=$('meMRDOther').value;
+   o.mrdTarget=$('meMRDTarget').value;o.mrdOther=$('meMRDOther').value;o.mrdValuePct=$('meMRDValuePct').value===''?null:Number($('meMRDValuePct').value);o.mrdLOD=$('meMRDLOD').value===''?null:Number($('meMRDLOD').value);o.mrdSpecimen=$('meMRDSpecimen').value||'Unknown';o.mrdLab=$('meMRDLab').value||'Unknown';
  }
  o.manualNotes=$('meNotes').value;o.source=existing?.source||'manual abstraction';
  if(diagnostic){D.marrows.forEach((x,j)=>{if(j!==marrowEditIndex)x.diagnostic=false});syncDxFromDiagnostic(date)}
@@ -955,13 +978,13 @@ function saveMarrowEditor(){
    if(same>=0&&confirm(`A marrow already exists on ${displayDate(date)}. Click OK to update that marrow; Cancel to add a separate marrow.`)){o.id=D.marrows[same].id;D.marrows[same]=o}
    else D.marrows.push(o)
  }else D.marrows[marrowEditIndex]=o;
- D.marrows.sort((a,b)=>a.date.localeCompare(b.date));closeMarrowEditor();save()
+ chronologySort();openBmbxCards.add(o.id);closeMarrowEditor();save()
 }
 function editMarrow(i){openMarrowEditor(i)}
 function delMarrow(i){if(confirm('Delete this marrow? The timeline, response, and relapse calculations will update automatically.')){let wasDiag=D.marrows[i]?.diagnostic;D.marrows.splice(i,1);if(wasDiag){let d=D.marrows.find(x=>x.diagnostic);D.base.dx_auto=d?.date||'';if(!D.base.dx_overridden)D.base.dx=D.base.dx_auto||''}save()}}
 function setManualCounts(i){
  let m=D.marrows[i],a=prompt('Manual ANC override (blank to clear)',m.manualAnc??''),ad=prompt('ANC date (YYYY-MM-DD; blank to clear)',m.manualAncDate||''),p=prompt('Manual platelet override (blank to clear)',m.manualPlt??''),pd=prompt('Platelet date (YYYY-MM-DD; blank to clear)',m.manualPltDate||'');
- if(a===null||ad===null||p===null||pd===null)return;m.manualAnc=a===''?null:Number(a);m.manualAncDate=ad;m.manualPlt=p===''?null:Number(p);m.manualPltDate=pd;save()
+ if(a===null||ad===null||p===null||pd===null)return;m.manualAnc=a===''?null:Number(a);m.manualAncDate=ad;m.manualPlt=p===''?null:Number(p);m.manualPltDate=pd;if(m.manualAnc!=null)m.selectedAncTs='';if(m.manualPlt!=null)m.selectedPltTs='';openBmbxCards.add(m.id);save()
 }
 
 
@@ -1094,7 +1117,7 @@ function deriveCytogenetics(m){
  let abn=parts.filter(x=>/^[-+]\d+$|^(del|inv|t|add|der|dup|ins|i|r|dic)\(/i.test(x));
  let mono=parts.filter(x=>/^-(?:[1-9]|1\d|2[0-2])$/.test(x));
  let structural=parts.filter(x=>/^(del|inv|t|add|der|dup|ins|i|r|dic)\(/i.test(x));
- let complex=/complex/i.test(raw)||abn.length>=3;
+ let complex=/complex/i.test(raw)||(abn.length>=3&&structural.length>=1);
  let monosomal=/monosomal/i.test(raw)||mono.length>=2||(mono.length>=1&&structural.length>=1);
  let normal=/^46,(XX|XY)(?:\[|$)/i.test(text.trim())&&abn.length===0;
  let category=normal?'Normal karyotype':complex&&monosomal?'Complex + monosomal karyotype':complex?'Complex karyotype':monosomal?'Monosomal karyotype':abn.length?'Abnormal, non-complex/non-monosomal':'Unknown';
@@ -1108,20 +1131,17 @@ function deriveCytogenetics(m){
 function setCytoOverride(v){let dm=D.marrows.find(x=>x.diagnostic);if(!dm)return;dm.cytoCategoryOverride=v||'';save()}
 
 function responseWindow(m){
- let fc=firstCycle();
- if(m.diagnostic || !fc || m.date<fc.start)return{mode:'diagnostic',end:'',a:null,p:null,fa:null,fp:null};
- let next=nextCycleAfter(m.date);
- let terminal=[D.out.hsctd,D.out.relapse_date_final,D.out.death,D.out.lastalive].filter(x=>x&&x>=m.date).sort()[0]||'';
- let mode,end;
- if(next){mode='final';end=addDays(next.start,-1)}
- else if(terminal){mode='final-terminal';end=terminal}
- else {mode='provisional';end=addDays(m.date,14)}
- let e=D.cbc.filter(x=>x.date>=m.date&&x.date<=end);
- let a=e.filter(x=>x.anc!=null).sort((x,y)=>y.anc-x.anc)[0],p=e.filter(x=>x.plt!=null).sort((x,y)=>y.plt-x.plt)[0];
- let fa=m.manualAnc!=null?{anc:m.manualAnc,date:m.manualAncDate,manual:true}:a;
- let fp=m.manualPlt!=null?{plt:m.manualPlt,date:m.manualPltDate,manual:true}:p;
- return{mode,end,a,p,fa,fp}
+ let fc=firstCycle();if(m.diagnostic||!fc||m.date<fc.start)return{mode:'diagnostic',end:'',a:null,p:null,fa:null,fp:null,eligible:[]};
+ let next=nextCycleAfter(m.date),terminal=[D.out.hsctd,D.out.relapse_date_final,D.out.death,D.out.lastalive].filter(x=>x&&x>=m.date).sort()[0]||'',mode,end;
+ if(next){mode='final';end=addDays(next.start,-1)}else if(terminal){mode='final-terminal';end=terminal}else{mode='provisional';end=addDays(m.date,14)}
+ let e=D.cbc.filter(x=>x.date>=m.date&&x.date<=end),a=e.filter(x=>x.anc!=null).sort((x,y)=>y.anc-x.anc)[0],p=e.filter(x=>x.plt!=null).sort((x,y)=>y.plt-x.plt)[0];
+ let sa=m.selectedAncTs?e.find(x=>x.timestamp===m.selectedAncTs&&x.anc!=null):null,sp=m.selectedPltTs?e.find(x=>x.timestamp===m.selectedPltTs&&x.plt!=null):null;
+ let fa=m.manualAnc!=null?{anc:m.manualAnc,date:m.manualAncDate,manual:true}:sa?{...sa,selected:true}:a,fp=m.manualPlt!=null?{plt:m.manualPlt,date:m.manualPltDate,manual:true}:sp?{...sp,selected:true}:p;
+ return{mode,end,a,p,fa,fp,eligible:e}
 }
+function setResponseCBCSelection(i,type,ts){let m=D.marrows[i];if(type==='anc'){m.selectedAncTs=ts||'';m.manualAnc=null;m.manualAncDate=''}else{m.selectedPltTs=ts||'';m.manualPlt=null;m.manualPltDate=''}openBmbxCards.add(m.id);save()}
+function responseCBCOptions(m,type){let r=responseWindow(m),k=type==='anc'?'anc':'plt',sel=type==='anc'?(m.selectedAncTs||''):(m.selectedPltTs||''),best=type==='anc'?r.a:r.p,opts=`<option value="">Automatic best eligible${best?.[k]!=null?' ('+best[k]+' on '+displayDate(best.date)+')':''}</option>`;r.eligible.filter(x=>x[k]!=null).sort((a,b)=>a.timestamp.localeCompare(b.timestamp)).forEach(x=>opts+=`<option value="${escHtml(x.timestamp)}" ${sel===x.timestamp?'selected':''}>${displayDate(x.date)} ${x.timestamp.slice(11,16)} · ${type==='anc'?'ANC':'Plt'} ${x[k]}${type==='anc'&&x.anc_source?' · '+escHtml(x.anc_source):''}</option>`);return opts}
+
 
 function responseReadiness(m){
  if(!m||m.diagnostic)return{state:'Not applicable',missing:[]};
@@ -1137,7 +1157,7 @@ function setMarrowAssessment(i,field,value){
  let m=D.marrows[i];if(!m)return;
  if(field==='pb')m.pb=value;
  if(field==='emd')m.emd=value;
- save()
+ openBmbxCards.add(m.id);save()
 }
 
 function classifyResponse(m){
@@ -1146,17 +1166,8 @@ function classifyResponse(m){
  let pb=preferredBlast(m);if(pb.indeterminate||pb.value==null)return 'Needs blast adjudication';
  if(!m.pb||m.pb==='Unknown'||!m.emd||m.emd==='Unknown')return 'Pending response completion';
  let r=responseWindow(m),bm=pb.value,anc=r.fa?.anc,plt=r.fp?.plt;
- if(bm<5&&m.pb!=='Present'&&m.emd==='Absent/resolved'){
-   if(anc==null||plt==null)return 'Pending count recovery data';
-   if(anc>=1&&plt>=100)return r.mode==='provisional'?'Provisional CR':'CR';
-   if(anc>=0.5&&plt>=50)return r.mode==='provisional'?'Provisional CRh':'CRh';
-   if(anc>=1||plt>=100)return r.mode==='provisional'?'Provisional CRi':'CRi';
-   return r.mode==='provisional'?'Provisional MLFS':'MLFS'
- }
- if(bm>=5&&bm<=25&&anc>=1&&plt>=100){
-   let d=D.marrows.find(x=>x.diagnostic),base=preferredBlast(d||{}).value;
-   if(Number.isFinite(base)&&bm<=base*0.5)return r.mode==='provisional'?'Provisional PR':'PR'
- }
+ if(bm<5&&m.pb!=='Present'&&m.emd==='Absent/resolved'){if(anc==null||plt==null)return'Pending count recovery data';if(anc>=1&&plt>=100)return r.mode==='provisional'?'Provisional CR':'CR';if(anc>=0.5&&plt>=50)return r.mode==='provisional'?'Provisional CRh':'CRh';if(anc>=1||plt>=100)return r.mode==='provisional'?'Provisional CRi':'CRi';return r.mode==='provisional'?'Provisional MLFS':'MLFS'}
+ if(bm>=5&&bm<=25){let d=D.marrows.find(x=>x.diagnostic),base=preferredBlast(d||{}).value;if(Number.isFinite(base)&&bm<=base*0.5){if(anc==null||plt==null)return'Pending count recovery data';if(anc>=1&&plt>=100)return r.mode==='provisional'?'Provisional PR':'PR'}}
  return 'No response'
 }
 function finalizedResponse(resp){return String(resp).replace(/^Provisional /,'')}
@@ -1165,7 +1176,7 @@ function autoRelapse(){
  for(let m of ordered){
    let resp=classifyResponse(m);
    if(/^Provisional /.test(resp))continue;
-   if(['CR','CRh','CRi'].includes(resp))remission=true;
+   if(['CR','CRh','CRi','MLFS'].includes(resp))remission=true;
    else{
      let pb=preferredBlast(m);
      if(remission&&pb.value!=null&&pb.value>=5){cand=m.date;break}
@@ -1175,20 +1186,68 @@ function autoRelapse(){
  if(cand&&!D.out.relapse_overridden){D.out.relapse_date_final=cand;D.out.relapse_basis='Auto: marrow';D.out.rel='Yes'}
 }
 
+
+function markerAutoStatus(m,key){
+ if(!m)return{status:'Unknown',evidence:'No diagnostic BMBx'};
+ let pos=(m.mutations||[]).filter(x=>x.result==='Positive'&&x.classification!=='VUS'),neg=(m.mutations||[]).filter(x=>x.result==='Negative');
+ let raw=[m.raw?.ngspos,m.raw?.ngstest,...pos.map(x=>x.raw_description||'')].join('\n');
+ if(key==='FLT3-ITD'){
+   if(pos.some(x=>x.gene==='FLT3'&&/\bITD\b|internal tandem/i.test([x.protein,x.cdna,x.raw_description].join(' '))))return{status:'Positive',evidence:'FLT3-ITD detected'};
+   if(/\bFLT3[-\s]?ITD\b[^.\n]{0,50}(?:not detected|negative|wild[- ]?type)/i.test(raw))return{status:'Negative',evidence:'FLT3-ITD explicitly negative'};
+   return{status:'Unknown',evidence:'Generic FLT3 testing does not establish ITD result'}
+ }
+ if(key==='FLT3-TKD'){
+   if(pos.some(x=>x.gene==='FLT3'&&/\bTKD\b|D835|I836|tyrosine kinase domain/i.test([x.protein,x.cdna,x.raw_description].join(' '))))return{status:'Positive',evidence:'FLT3-TKD detected'};
+   if(/\bFLT3[-\s]?TKD\b[^.\n]{0,50}(?:not detected|negative|wild[- ]?type)/i.test(raw))return{status:'Negative',evidence:'FLT3-TKD explicitly negative'};
+   return{status:'Unknown',evidence:'Generic FLT3 testing does not establish TKD result'}
+ }
+ if(key==='KMT2A'){
+   if((m.fishObservations||[]).some(x=>x.result==='Positive'&&/KMT2A|11q23/i.test(x.target||''))||pos.some(x=>x.gene==='KMT2A'&&/rearrange|fusion|::/i.test(x.raw_description||'')))return{status:'Positive',evidence:'KMT2A rearrangement/fusion detected'};
+   if(neg.some(x=>x.gene==='KMT2A')||(m.fishObservations||[]).some(x=>x.result==='Negative'&&/KMT2A|11q23/i.test(x.target||'')))return{status:'Negative',evidence:'KMT2A explicitly tested negative'};
+   if(pos.some(x=>x.gene==='KMT2A'))return{status:'Unknown',evidence:'KMT2A sequence variant present but rearrangement status not established'};
+   return{status:'Unknown',evidence:'Not explicitly tested'}
+ }
+ if(pos.some(x=>x.gene===key))return{status:'Positive',evidence:`${key} detected`};
+ if(neg.some(x=>x.gene===key))return{status:'Negative',evidence:`${key} explicitly assayed and not detected`};
+ return{status:'Unknown',evidence:'Not explicitly tested'}
+}
+function markerStatus(m,key){
+ let o=D.base.marker_overrides?.[key];if(o&&o!=='Automatic')return{status:o,evidence:'Manual structured override'};return markerAutoStatus(m,key)
+}
+function setMarkerOverride(key,v){D.base.marker_overrides=D.base.marker_overrides||{};if(v==='Automatic')delete D.base.marker_overrides[key];else D.base.marker_overrides[key]=v;save()}
+function eln2022AdverseCytogenetics(m){
+ if(!m)return[];let hits=[],d=deriveCytogenetics(m),s=[...(m.cytoObservations||[]).map(x=>x.abnormality||''),...(m.fishObservations||[]).filter(x=>x.result==='Positive').map(x=>x.target||''),m.raw?.cyto||'',m.raw?.fish||''].join(' ');
+ if(d.category.includes('Complex'))hits.push('complex karyotype');if(d.category.includes('Monosomal'))hits.push('monosomal karyotype');
+ [[/(\-5\b|del\s*\(?5|5q.*del)/i,'-5/del(5q)'],[/(\-7\b|monosomy\s*7)/i,'-7'],[/(\-17\b|17p.*(?:abn|del)|del\s*\(?17)/i,'-17/abn(17p)'],[/(inv\s*\(?3|t\s*\(?3\s*;\s*3|MECOM.*rearr|3q26.*MECOM)/i,'MECOM-rearranged'],[/(t\s*\(?6\s*;\s*9|DEK.*NUP214)/i,'DEK::NUP214'],[/(t\s*\(?9\s*;\s*22|BCR.*ABL1)/i,'BCR::ABL1']].forEach(([r,l])=>{if(r.test(s)&&!hits.includes(l))hits.push(l)});
+ let k=markerStatus(m,'KMT2A');if(k.status==='Positive'&&!/t\s*\(?9\s*;\s*11|MLLT3/i.test(s))hits.push('KMT2A rearrangement');return hits
+}
+function favorableCBF(m){let s=[m.raw?.cyto||'',m.raw?.fish||'',...(m.cytoObservations||[]).map(x=>x.abnormality||''),...(m.fishObservations||[]).filter(x=>x.result==='Positive').map(x=>x.target||'')].join(' ');if(/t\s*\(?8\s*;\s*21|RUNX1.*RUNX1T1/i.test(s))return'RUNX1::RUNX1T1';if(/inv\s*\(?16|t\s*\(?16\s*;\s*16|CBFB.*MYH11/i.test(s))return'CBFB::MYH11';return''}
 function eln(){
- let m=D.marrows.find(x=>x.diagnostic);if(!m)return['Pending','No diagnostic marrow','Pending','No diagnostic marrow'];
- let pos=g=>m.mutations.some(x=>x.gene===g&&x.result==='Positive'&&x.classification!=='VUS'),neg=g=>m.mutations.some(x=>x.gene===g&&x.result==='Negative');
- let adv=['TP53','ASXL1','RUNX1','SRSF2','SF3B1','U2AF1','ZRSR2','BCOR','STAG2','EZH2'].filter(pos);
- let e22=adv.length?'Adverse':pos('NPM1')?'Favorable':'Unable to determine',w22=adv.length?'Driver(s): '+adv.join(', '):pos('NPM1')?'NPM1 detected':'Insufficient structured genetics';
+ let m=D.marrows.find(x=>x.diagnostic);if(!m)return['Pending','No diagnostic BMBx','Pending','No diagnostic BMBx'];
+ let pos=g=>(m.mutations||[]).some(x=>x.gene===g&&x.result==='Positive'&&x.classification!=='VUS'),advGenes=['ASXL1','BCOR','EZH2','RUNX1','SF3B1','SRSF2','STAG2','U2AF1','ZRSR2'].filter(pos);
+ let tp53=markerStatus(m,'TP53').status,itd=markerStatus(m,'FLT3-ITD').status,npm1=markerStatus(m,'NPM1').status,cy=eln2022AdverseCytogenetics(m),cbf=favorableCBF(m);
+ let tp53Rows=(m.mutations||[]).filter(x=>x.gene==='TP53'&&x.result==='Positive'&&x.classification!=='VUS'),tp53Adv=tp53Rows.some(x=>x.vaf!=null&&Number(x.vaf)>=10),tp53VafUnknown=tp53Rows.some(x=>x.vaf==null);
+ let cebpa=(m.mutations||[]).some(x=>x.gene==='CEBPA'&&x.result==='Positive'&&/bZIP|basic leucine zipper/i.test([x.protein,x.raw_description].join(' ')));
+ let e22='Unable to determine',w22='Insufficient structured genetics';
+ if(cbf){e22='Favorable';w22=cbf}
+ else if(cebpa){e22='Favorable';w22='CEBPA bZIP in-frame mutation detected'}
+ else if(tp53Adv||cy.length){e22='Adverse';w22=[tp53Adv?'TP53 mutation VAF ≥10%':'',...cy].filter(Boolean).join(' · ')}
+ else if(tp53==='Positive'&&tp53VafUnknown){e22='Unable to determine';w22='TP53 mutation detected but VAF unavailable for ELN 2022 ≥10% criterion'}
+ else if(npm1==='Positive'){if(itd==='Positive'){e22='Intermediate';w22='NPM1-mutated with FLT3-ITD'}else if(itd==='Negative'){e22='Favorable';w22='NPM1-mutated without FLT3-ITD'}else w22='NPM1 detected; FLT3-ITD status unknown'}
+ else if(advGenes.length){e22='Adverse';w22='MR-gene mutation(s): '+advGenes.join(', ')}
+ else if(itd==='Positive'){e22='Intermediate';w22='FLT3-ITD detected'}
+ else {let s=[m.raw?.cyto,m.raw?.fish].join(' ');if(/t\s*\(?9\s*;\s*11|KMT2A.*MLLT3|MLLT3.*KMT2A/i.test(s)){e22='Intermediate';w22='t(9;11)/KMT2A::MLLT3'}else if(deriveCytogenetics(m).category!=='Unknown'&&(m.mutations||[]).length){e22='Intermediate';w22='No favorable/adverse defining abnormality identified'}}
  let e24='Unable to determine',w24='Insufficient structured genetics';
- if(pos('TP53')){e24='Adverse';w24='TP53 detected'}else if(pos('FLT3')||pos('NRAS')||pos('KRAS')){e24='Intermediate';w24='Signaling mutation detected'}else if(['TP53','FLT3','NRAS','KRAS'].every(neg)){e24='Favorable';w24='No TP53/FLT3/NRAS/KRAS mutation detected'}
- if(D.base.phma==='Yes')w24+=' · *prior HMA: calculated category retained with applicability notation';
+ if(D.base.phma==='Yes'){e24='Not applicable';w24='2024 ELN Less-Intensive does not apply after prior HMA exposure'}
+ else{let nr=markerStatus(m,'NRAS').status,kr=markerStatus(m,'KRAS').status;if(tp53==='Positive'){e24='Adverse';w24='TP53 mutation'}else if(pos('DDX41')){e24='Favorable';w24='DDX41 mutation'}else if(tp53==='Negative'&&[itd,nr,kr].some(x=>x==='Positive')){e24='Intermediate';w24='FLT3-ITD and/or NRAS/KRAS mutation with TP53 wild-type'}else if(tp53==='Negative'&&[itd,nr,kr].every(x=>x==='Negative')){e24='Favorable';w24='TP53 wild-type with FLT3-ITD, NRAS and KRAS negative'}else{let miss=[['TP53',tp53],['FLT3-ITD',itd],['NRAS',nr],['KRAS',kr]].filter(x=>x[1]==='Unknown').map(x=>x[0]);w24='Required status unknown: '+miss.join(', ')}}
  return[e22,w22,e24,w24]
 }
+
 function problems(){
  let a=[],diags=D.marrows.filter(x=>x.diagnostic);
  if(diags.length!==1)a.push('Exactly one diagnostic/baseline marrow should be designated.');
  let dates={};D.marrows.forEach(m=>dates[m.date]=(dates[m.date]||0)+1);Object.entries(dates).filter(([d,n])=>n>1).forEach(([d,n])=>a.push(`${n} marrow records exist on ${displayDate(d)}. This is allowed, but confirm they represent separate procedures rather than duplicate submission.`));
+ let cdates={};D.cycles.filter(c=>c.start).forEach(c=>cdates[c.start]=(cdates[c.start]||0)+1);Object.entries(cdates).filter(([d,n])=>n>1).forEach(([d,n])=>a.push(`${n} treatment cycles share start date ${displayDate(d)}. Resolve chronology before relying on cycle numbering.`));
  let fc=firstCycle();
  D.cycles.forEach(c=>{
    if(c.start&&!plausibleDate(c.start))a.push(`Cycle ${c.n} has an implausible start date (${c.start}).`);
@@ -1198,7 +1257,7 @@ function problems(){
    if(c.venEnd&&c.venStart&&c.venEnd<c.venStart)a.push(`Cycle ${c.n} VEN final dose precedes VEN start.`);
  });
  if(fc&&diags[0]&&diags[0].date>fc.start)a.push('Diagnostic marrow occurs after C1D1. Review chronology.');
- D.marrows.filter(m=>!m.diagnostic&&fc&&m.date>=fc.start).forEach(m=>{let r=responseWindow(m);if(!r.fa||!r.fp)a.push(`Marrow ${displayDate(m.date)}: ANC and/or platelet value is missing in the ${r.mode==='provisional'?'provisional 14-day':'ELN recovery'} window.`)});
+ D.marrows.filter(m=>!m.diagnostic&&fc&&m.date>=fc.start).forEach(m=>{let r=responseWindow(m);if(!r.fa||!r.fp)a.push(`BMBx ${displayDate(m.date)}: ANC and/or platelet value is missing in the ${r.mode==='provisional'?'provisional 14-day':'ELN recovery'} window.`)});
  return[...new Set(a)]
 }
 
@@ -1220,6 +1279,7 @@ function marrowBiologySummary(m){
 }
 
 function render(){
+ chronologySort();
  autoRelapse();
  D.marrows.forEach(m=>{
    if(!Array.isArray(m.mrdMethods))m.mrdMethods=[];
@@ -1233,7 +1293,7 @@ function render(){
    m.fishObservations=(m.fishObservations||[]).map(x=>x.canonical?x:withAMLNormalization(x,'target'));
    if(m.aspirateAdequacy==null)m.aspirateAdequacy=extractAspirateAdequacy(m.raw?.path||'');
    if(m.pbBlastPct==null){let pbd=extractPBBlastData(m.raw?.path||'');m.pbBlastPct=pbd.pct;if(!m.pb)m.pb=pbd.status}
-   if(!m.pb)m.pb='Unknown';if(!m.emd)m.emd='Unknown';
+   if(!m.pb)m.pb='Unknown';if(!m.emd)m.emd='Unknown';if(m.mrdValuePct===undefined)m.mrdValuePct=null;if(m.mrdLOD===undefined)m.mrdLOD=null;if(!m.mrdSpecimen)m.mrdSpecimen='Bone marrow';if(!m.mrdLab)m.mrdLab='Unknown';if(m.selectedAncTs===undefined)m.selectedAncTs='';if(m.selectedPltTs===undefined)m.selectedPltTs='';
    m.cytoHits=structuredCytoHits(m.cytoObservations,m.fishObservations);
    m.normalizedFindings=normalizedPositiveFindings(m);
    if(m.mrdAssessed==null)m.mrdAssessed=m.diagnostic?'Not applicable':(m.mrd&&m.mrd!=='Not performed'?'Yes':'Unknown');
@@ -1261,79 +1321,39 @@ function render(){
  if($('otherAnteWrap'))$('otherAnteWrap').style.display=D.base.onto==='Other antecedent hematologic disorder'?'block':'none';
  let req=[D.base.study,D.base.dx,D.base.age,D.base.onto,D.base.phma,D.marrows.some(x=>x.diagnostic),D.cycles.length,D.cbc.length,D.out.vital],comp=Math.round(req.filter(Boolean).length/req.length*100);$('mComp').textContent=comp+'%';$('mIssues').textContent=problems().length;
 
- $('clist').innerHTML=D.cycles.map((c,i)=>{
-   let next=D.cycles[i+1],end=next?.start?addDays(next.start,-1):'',len=end&&c.start?dd(c.start,end)+1:'';
-   let hmaMismatch=Number(c.hmaPlanned)!==Number(c.hmaActual),venMismatch=Number(c.venPlanned)!==Number(c.venActual);
-   let summary=[c.hma,`HMA ${c.hmaActual}/${c.hmaPlanned} days`,`VEN ${c.venActual}/${c.venPlanned} days`,c.gcsf?`G-CSF ${c.gcsf}`:'',c.delay==='Yes'?'Delayed':'',c.venHold==='Yes'?`${c.heldDays||0} held days`:'' ].filter(Boolean).join(' · ');
-   let reasons=['Count recovery / cytopenias','Infection / febrile illness','Other intercurrent illness','Treatment-related toxicity / organ dysfunction','Hospitalization','Procedure / surgery','Patient preference / scheduling','Logistics / authorization / access','Other'];
-   return `<div class=card><h3>Cycle ${c.n} <span class=pill>${c.start?dxday(c.start):'start pending'}</span></h3><div class=cycle-summary>${summary} ${hmaMismatch?'<span class="pill warn">HMA actual ≠ planned</span>':''} ${venMismatch?'<span class="pill warn">VEN actual ≠ planned</span>':''}</div>
-   <div class=row><div><label>Cycle start</label><input type=text placeholder="MM/DD/YYYY" value="${c.start?displayDate(c.start):''}" onchange="cycleDateText(${i},'start',this.value)"></div>
-   <div><label>HMA</label><select onchange="cycleField(${i},'hma',this.value)"><option ${c.hma==='Azacitidine'?'selected':''}>Azacitidine</option><option ${c.hma==='Decitabine'?'selected':''}>Decitabine</option><option ${c.hma==='Oral decitabine-cedazuridine'?'selected':''}>Oral decitabine-cedazuridine</option></select></div>
-   <div><label>Derived cycle end / length</label><input disabled value="${end?displayDate(end)+' · '+len+' days':'Open / terminal cycle'}"></div></div>
-   <div class=four><div><label>Planned HMA days</label><input type=number min=0 value="${c.hmaPlanned??hmaDefault(c.hma)}" onchange="cycleField(${i},'hmaPlanned',this.value)"></div>
-   <div><label>HMA days received</label><input type=number min=0 value="${c.hmaActual??hmaDefault(c.hma)}" onchange="cycleField(${i},'hmaActual',this.value)"></div>
-   <div><label>G-CSF this cycle</label><select onchange="cycleField(${i},'gcsf',this.value)"><option></option><option ${c.gcsf==='No'?'selected':''}>No</option><option ${c.gcsf==='Yes'?'selected':''}>Yes</option><option ${c.gcsf==='Unknown'?'selected':''}>Unknown</option></select></div>
-   <div><label>Treatment delay before cycle</label><select onchange="cycleField(${i},'delay',this.value)"><option>No</option><option ${c.delay==='Yes'?'selected':''}>Yes</option></select></div></div>
-   ${c.delay==='Yes'?`<div class=mutedbox style="margin-top:10px"><label>Reason(s) for delay</label><div>${reasons.map(r=>`<label style="display:inline-flex;align-items:center;margin-right:14px;font-weight:400"><input type=checkbox style="width:auto;margin-right:5px" ${(c.delayReasons||[]).includes(r)?'checked':''} onchange="delayReasonToggle(${i},'${r.replaceAll("'","\'")}',this.checked)"> ${r}</label>`).join('')}</div></div>`:''}
-   <div class=four><div><label>VEN start</label><input type=text placeholder="MM/DD/YYYY" value="${c.venStart?displayDate(c.venStart):''}" onchange="cycleDateText(${i},'venStart',this.value)"><button class="btn alt" style="margin-top:5px;padding:5px 8px" onclick="setVenStartToCycle(${i})">Set = C${c.n}D1</button></div>
-   <div><label>Planned VEN days</label><input type=number min=1 value="${c.venPlanned??28}" onchange="cycleField(${i},'venPlanned',this.value)"></div>
-   <div><label>VEN days received</label><input type=number min=1 value="${c.venActual??28}" onchange="cycleField(${i},'venActual',this.value)"></div>
-   <div><label>VEN interruption / hold</label><select onchange="cycleField(${i},'venHold',this.value)"><option>No</option><option ${c.venHold==='Yes'?'selected':''}>Yes</option></select></div></div>
-   <div class=row><div><label>Days held</label><input type=number min=0 value="${c.heldDays||0}" onchange="cycleField(${i},'heldDays',this.value)"></div>
-   <div><label>VEN final dose</label><input type=text placeholder="MM/DD/YYYY" value="${c.venEnd?displayDate(c.venEnd):''}" onchange="cycleEndText(${i},this.value)"><span class=small>Auto-calculated from VEN start, days received, and held days</span></div>
-   <div><label>Reason VEN shortened / stopped early</label><input value="${c.shortenedReason||''}" onchange="cycleField(${i},'shortenedReason',this.value)"></div></div>
-   <label>Cycle notes</label><textarea class=notes onchange="cycleField(${i},'notes',this.value)">${c.notes||''}</textarea>
-   <div class=actions><button class="btn danger" onclick="delCycle(${i})">Delete cycle</button></div></div>`
- }).join('');
+ $('clist').innerHTML=D.cycles.length?D.cycles.map((c,i)=>{
+ let next=D.cycles.slice(i+1).find(x=>x.start),end=next?.start?addDays(next.start,-1):(c.start?addDays(c.start,27):''),len=end&&c.start?dd(c.start,end)+1:'',terminal=!next?.start&&!!c.start;
+ let hm=Number(c.hmaPlanned)!==Number(c.hmaActual),vm=Number(c.venPlanned)!==Number(c.venActual),summary=[c.start?displayDate(c.start):'Start pending',c.hma,`HMA ${c.hmaActual}/${c.hmaPlanned}d`,`VEN ${c.venActual}/${c.venPlanned}d`,c.delay==='Yes'?'Delayed':''].filter(Boolean).join(' · ');
+ let reasons=['Count recovery / cytopenias','Infection / febrile illness','Other intercurrent illness','Treatment-related toxicity / organ dysfunction','Hospitalization','Procedure / surgery','Patient preference / scheduling','Logistics / authorization / access','Other'];
+ return `<details class="card record-card" ${openCycleCards.has(c.id)?'open':''} ontoggle="rememberRecordCardOpenSafe('cycle','${escHtml(c.id)}',this.open)"><summary><b>${cycleLabel(c)}</b> <span class=pill>${c.start?dxday(c.start):'start pending'}</span> <span class=small>${escHtml(summary)}</span>${hm?' <span class="pill warn">HMA mismatch</span>':''}${vm?' <span class="pill warn">VEN mismatch</span>':''}</summary><div style="padding-top:12px">
+ <div class=row><div><label>Cycle start</label><input type=text placeholder="MM/DD/YYYY" value="${c.start?displayDate(c.start):''}" onchange="cycleDateText(${i},'start',this.value)"></div><div><label>HMA</label><select onchange="cycleField(${i},'hma',this.value)"><option ${c.hma==='Azacitidine'?'selected':''}>Azacitidine</option><option ${c.hma==='Decitabine'?'selected':''}>Decitabine</option><option ${c.hma==='Oral decitabine-cedazuridine'?'selected':''}>Oral decitabine-cedazuridine</option></select></div><div><label>Derived cycle end / length</label><input disabled value="${end?displayDate(end)+' · '+len+' days'+(terminal?' · provisional 28-day terminal default':''):'Start pending'}"></div></div>
+ <div class=four><div><label>Planned HMA days</label><input type=number min=0 value="${c.hmaPlanned??hmaDefault(c.hma)}" onchange="cycleField(${i},'hmaPlanned',this.value)"></div><div><label>HMA days received</label><input type=number min=0 value="${c.hmaActual??hmaDefault(c.hma)}" onchange="cycleField(${i},'hmaActual',this.value)"></div><div><label>G-CSF this cycle</label><select onchange="cycleField(${i},'gcsf',this.value)"><option></option><option ${c.gcsf==='No'?'selected':''}>No</option><option ${c.gcsf==='Yes'?'selected':''}>Yes</option><option ${c.gcsf==='Unknown'?'selected':''}>Unknown</option></select></div><div><label>Treatment delay before cycle</label><select onchange="cycleField(${i},'delay',this.value)"><option>No</option><option ${c.delay==='Yes'?'selected':''}>Yes</option></select></div></div>
+ ${c.delay==='Yes'?`<div class=mutedbox style="margin-top:10px"><label>Reason(s) for delay</label><div>${reasons.map(r=>`<label style="display:inline-flex;align-items:center;margin-right:14px;font-weight:400"><input type=checkbox style="width:auto;margin-right:5px" ${(c.delayReasons||[]).includes(r)?'checked':''} onchange="delayReasonToggle(${i},'${r.replaceAll("'","\\'")}',this.checked)"> ${r}</label>`).join('')}</div></div>`:''}
+ <div class=four><div><label>VEN start</label><input type=text placeholder="MM/DD/YYYY" value="${c.venStart?displayDate(c.venStart):''}" onchange="cycleDateText(${i},'venStart',this.value)"><button class="btn alt" style="margin-top:5px;padding:5px 8px" onclick="setVenStartToCycle(${i})">Set = ${c.n?'C'+c.n+'D1':'cycle start'}</button></div><div><label>Planned VEN days</label><input type=number min=1 value="${c.venPlanned??28}" onchange="cycleField(${i},'venPlanned',this.value)"></div><div><label>VEN days received</label><input type=number min=1 value="${c.venActual??28}" onchange="cycleField(${i},'venActual',this.value)"></div><div><label>VEN interruption / hold</label><select onchange="cycleField(${i},'venHold',this.value)"><option>No</option><option ${c.venHold==='Yes'?'selected':''}>Yes</option></select></div></div>
+ <div class=row><div><label>Days held</label><input type=number min=0 value="${c.heldDays||0}" onchange="cycleField(${i},'heldDays',this.value)"></div><div><label>VEN final dose</label><input type=text placeholder="MM/DD/YYYY" value="${c.venEnd?displayDate(c.venEnd):''}" onchange="cycleEndText(${i},this.value)"></div><div><label>Reason VEN shortened / stopped early</label><input value="${escHtml(c.shortenedReason||'')}" onchange="cycleField(${i},'shortenedReason',this.value)"></div></div>
+ <label>Cycle notes</label><textarea class=notes onchange="cycleField(${i},'notes',this.value)">${escHtml(c.notes||'')}</textarea><div class=actions><button class="btn danger" onclick="delCycle(${i})">Delete cycle</button></div></div></details>`
+}).join(''):'<p class=help>No treatment cycles yet.</p>';
 
  $('bmlist').innerHTML=D.marrows.length?D.marrows.map((m,i)=>{
-   let c=cyc(m.date),r=responseWindow(m),resp=classifyResponse(m),pb=preferredBlast(m),ready=responseReadiness(m);
-   let blastSourceShort=pb.source.startsWith('Flow')?'flow':pb.source.startsWith('Aspirate')?'aspirate differential':pb.source.startsWith('Core/IHC')?'IHC':pb.source.startsWith('Manual')?'adjudicated':'';
-   let blastText=pb.value!=null?pb.value+'%'+(blastSourceShort?` (${blastSourceShort})`:''):'Needs review';
-   let responseBlock;
-   if(m.diagnostic){
-     responseBlock=`<div class=info><b>Diagnostic / baseline marrow.</b> Used for baseline disease biology and ELN risk. It is not scored as a treatment-response assessment.</div>`;
-   }else if(r.mode==='diagnostic'){
-     responseBlock=`<div class=info><b>Pretreatment marrow.</b> Not scored for HMA/VEN treatment response.</div>`;
-   }else{
-     let windowLabel=r.mode==='provisional'?`Provisional 14-day preview: ${displayDate(m.date)} → ${displayDate(r.end)}`:
-       `ELN hematologic recovery window: ${displayDate(m.date)} → ${displayDate(r.end)}`;
-     let note=r.mode==='provisional'?'<div class=stage><b>Final response pending next-cycle boundary.</b> The 14-day window is a provisional preview only and will be replaced automatically once the next cycle or terminal boundary is entered.</div>':'';
-     responseBlock=`<h4>${windowLabel}</h4><table><tr><th></th><th>Final value used</th><th>Date</th><th>Source</th></tr>
-     <tr><td>ANC</td><td>${r.fa?.anc??'—'}</td><td>${r.fa?.date?displayDate(r.fa.date):'—'}</td><td>${r.fa?.manual?'manual override':'best eligible CBC'}</td></tr>
-     <tr><td>Platelets</td><td>${r.fp?.plt??'—'}</td><td>${r.fp?.date?displayDate(r.fp.date):'—'}</td><td>${r.fp?.manual?'manual override':'best eligible CBC'}</td></tr></table>${note}`;
-   }
-   return `<div class=card><h3>${displayDate(m.date)} ${m.diagnostic?'<span class="pill ok">Diagnostic</span>':''} <span class=pill>${dxday(m.date)}</span> ${c?`<span class=pill>C${c.n}D${dd(c.start,m.date)+1}</span>`:''}</h3>
-   <div class="row two">
-     <div class=metric>Blasts<b>${blastText}</b><span class=small>${pb.source}</span></div>
-     <div class=metric>Genomic / cytogenetic summary<div style="margin-top:7px;line-height:1.9">${marrowBiologySummary(m)}</div></div>
-   </div>
-   <div class="row two" style="margin-top:8px">
-     <div class=metric>Calculated response<b>${resp}</b></div>
-     ${m.diagnostic?'':`<div class=metric>MRD<b>${m.mrd||'Unknown'}</b><span class=small>${(m.mrdMethods||[]).length?(m.mrdMethods.join(' + ')+(m.mrdTarget?' · '+m.mrdTarget:'')):(m.mrdTarget||'Method not recorded')}</span></div>`}
-   </div>
-   <div class="mutedbox" style="margin-top:8px">
-     <div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap">
-       <div style="min-width:180px"><label style="margin-bottom:3px">Peripheral blood blasts</label><select onchange="setMarrowAssessment(${i},'pb',this.value)"><option ${m.pb==='Unknown'||!m.pb?'selected':''}>Unknown</option><option ${m.pb==='Absent'?'selected':''}>Absent</option><option ${m.pb==='Present'?'selected':''}>Present</option></select>${m.pbBlastPct!=null?`<span class="small">${m.pbBlastPct}% reported</span>`:''}</div>
-       <div style="min-width:180px"><label style="margin-bottom:3px">Extramedullary disease</label><select onchange="setMarrowAssessment(${i},'emd',this.value)"><option ${m.emd==='Unknown'||!m.emd?'selected':''}>Unknown</option><option value="Absent/resolved" ${m.emd==='Absent/resolved'?'selected':''}>Absent / resolved</option><option ${m.emd==='Present'?'selected':''}>Present</option></select></div>
-       ${m.diagnostic?'':`<div style="flex:1;min-width:220px"><b>Response readiness:</b> ${ready.state==='Complete'?'<span class="pill ok">Complete</span>':`<span class="pill warn">Incomplete</span> <span class="small">Missing: ${ready.missing.join(', ')}</span>`}</div>`}
-     </div>
-   </div>
-   <details><summary>Blast-source details</summary><table><tr><th>Source</th><th>Value</th></tr><tr><td>Flow</td><td>${m.blastFlow??'—'}${m.blastFlow!=null?'%':''} · ${m.flowAdequate===false?'not adequate/representative':'adequate/assumed adequate'}</td></tr><tr><td>Aspirate/manual differential</td><td>${m.blastAspirate??'—'}${m.blastAspirate!=null?'%':''} · ${m.aspirateAdequacy||'Unknown adequacy'}</td></tr><tr><td>Core/IHC</td><td>${m.blastIhcLow!=null?(m.blastIhcLow===m.blastIhcHigh?m.blastIhcLow:m.blastIhcLow+'–'+m.blastIhcHigh)+'%':'—'}</td></tr></table></details>
-   ${responseBlock}
-   <div class="mutedbox" style="margin-top:10px"><b>Marrow assessment details</b><br><span class=small>Peripheral blood blasts: <b>${m.pb||'Unknown'}</b>${m.pbBlastPct!=null?` (${m.pbBlastPct}%)`:''} · Extramedullary disease: <b>${m.emd||'Unknown'}</b>${m.diagnostic?'':` · MRD: <b>${m.mrd||'Unknown'}</b>${(m.mrdMethods||[]).length?' via '+m.mrdMethods.join(' + '):''}${m.mrdTarget?' · '+m.mrdTarget:''}${m.mrdOther?' · '+m.mrdOther:''}`}</span>${m.manualNotes?`<div class=small style="margin-top:6px"><b>Note:</b> ${m.manualNotes}</div>`:''}</div>
-   <details><summary>Parsed flow/genetics details</summary>
-   <p><b>Blast immunophenotype</b><br>${(m.flow||[]).map(x=>`<span class="pill ${x.result==='Positive'?'flowpos':x.result==='Negative'?'flowneg':'neutral'}">${flowDisplay(x)}</span>`).join(' ')||'<span class=small>Blast immunophenotype not confidently extracted.</span>'}</p>
-   <p><b>NGS</b><br>${(m.mutations||[]).map(x=>`<span class="pill ${x.classification==='VUS'?'ngsvus':x.result==='Positive'?'ngspos':'ngsneg'}">${x.result==='Negative'?x.gene+' Negative':variantDisplay(x)}</span>`).join(' ')||'<span class=small>No structured NGS observations.</span>'}</p>
-   <p><b>Conventional cytogenetics</b><br>${cytoDescriptorChips(m).map(x=>`<span class="pill neutral">${x}</span>`).join(' ')} ${(m.cytoObservations||cytogeneticObservations(m.raw?.cyto||'')).map(x=>`<span class="pill neutral">${escHtml(x.abnormality)}</span>`).join(' ')||'<span class=small>No structured conventional cytogenetic abnormalities.</span>'}</p>
-   <p><b>FISH</b><br>${(m.fishObservations||fishparse(m.raw?.fish||'')).map(x=>`<span class="pill ${x.result==='Positive'?'fishpos':'fishneg'}">${x.target} ${x.result}</span>`).join(' ')||'<span class=small>No structured FISH observations.</span>'}</p>
-   </details>
-   <div class=actions>${!m.diagnostic?`<button class="btn alt" onclick="setManualCounts(${i})">Override counts</button>`:''}<button class="btn alt" onclick="editMarrow(${i})">Edit marrow</button><button class="btn danger" onclick="delMarrow(${i})">Delete marrow</button></div></div>`
- }).join(''):'<p class=help>No confirmed marrows yet.</p>';
+ let c=cyc(m.date),r=responseWindow(m),resp=classifyResponse(m),pb=preferredBlast(m),ready=responseReadiness(m),n=i+1,bt=pb.value!=null?pb.value+'%':'Needs review';
+ let rb=m.diagnostic?`<div class=info><b>Diagnostic / baseline BMBx.</b> Used for baseline disease biology and ELN risk; not scored as treatment response.</div>`:r.mode==='diagnostic'?`<div class=info><b>Pretreatment BMBx.</b> Not scored for HMA/VEN response.</div>`:`<h4>CBC selection for response</h4><div class="row two"><div><label>ANC used</label><select onchange="setResponseCBCSelection(${i},'anc',this.value)">${responseCBCOptions(m,'anc')}</select><span class=small>Current: ${r.fa?.anc??'—'} ${r.fa?.date?'on '+displayDate(r.fa.date):''}${r.fa?.manual?' · manual':r.fa?.selected?' · selected':' · automatic'}</span></div><div><label>Platelets used</label><select onchange="setResponseCBCSelection(${i},'plt',this.value)">${responseCBCOptions(m,'plt')}</select><span class=small>Current: ${r.fp?.plt??'—'} ${r.fp?.date?'on '+displayDate(r.fp.date):''}${r.fp?.manual?' · manual':r.fp?.selected?' · selected':' · automatic'}</span></div></div><div class=small>${r.mode==='provisional'?'Provisional 14-day preview':'Eligible recovery window'}: ${displayDate(m.date)} → ${displayDate(r.end)}</div><div class=actions><button class="btn alt" onclick="setManualCounts(${i})">Manual count entry / override</button></div>`;
+ let hdr=m.diagnostic?'<span class="pill ok">Diagnostic</span>':`<span class=pill>${escHtml(resp)}</span>`,readyBadge=m.diagnostic?'':ready.state==='Complete'?'<span class="pill ok">Complete</span>':`<span class="pill warn">Needs ${escHtml(ready.missing.join(', '))}</span>`;
+ return `<details class="card record-card" ${openBmbxCards.has(m.id)?'open':''} ontoggle="rememberRecordCardOpenSafe('bmbx','${escHtml(m.id)}',this.open)"><summary><b>BMBx ${n}</b> · ${displayDate(m.date)} ${hdr} <span class=pill>${dxday(m.date)}</span> ${c?`<span class=pill>C${c.n}D${dd(c.start,m.date)+1}</span>`:''} <span class=small>Blasts ${escHtml(bt)}</span> ${readyBadge}</summary><div style="padding-top:12px">
+ <div class="row two"><div class=metric>Blasts<b>${bt}</b><span class=small>${escHtml(pb.source)}</span></div><div class=metric>Genomic / cytogenetic summary<div style="margin-top:7px;line-height:1.9">${marrowBiologySummary(m)}</div></div></div>
+ <div class="row two" style="margin-top:8px"><div class=metric>Calculated response<b>${escHtml(resp)}</b></div>${m.diagnostic?'':`<div class=metric>MRD<b>${escHtml(m.mrd||'Unknown')}</b><span class=small>${m.mrdValuePct!=null?m.mrdValuePct+'% · ':''}${escHtml((m.mrdMethods||[]).join(' + ')||'Method not recorded')}${m.mrdLOD!=null?' · LOD '+m.mrdLOD+'%':''}${m.mrdLab&&m.mrdLab!=='Unknown'?' · '+escHtml(m.mrdLab):''}</span></div>`}</div>
+ <div class="mutedbox" style="margin-top:8px"><div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap"><div style="min-width:180px"><label>Peripheral blood blasts</label><select onchange="setMarrowAssessment(${i},'pb',this.value)"><option ${m.pb==='Unknown'||!m.pb?'selected':''}>Unknown</option><option ${m.pb==='Absent'?'selected':''}>Absent</option><option ${m.pb==='Present'?'selected':''}>Present</option></select>${m.pbBlastPct!=null?`<span class=small>${m.pbBlastPct}% reported</span>`:''}</div><div style="min-width:180px"><label>Extramedullary disease</label><select onchange="setMarrowAssessment(${i},'emd',this.value)"><option ${m.emd==='Unknown'||!m.emd?'selected':''}>Unknown</option><option value="Absent/resolved" ${m.emd==='Absent/resolved'?'selected':''}>Absent / resolved</option><option ${m.emd==='Present'?'selected':''}>Present</option></select></div>${m.diagnostic?'':`<div style="flex:1"><b>Response readiness:</b> ${ready.state==='Complete'?'<span class="pill ok">Complete</span>':`<span class="pill warn">Incomplete</span> <span class=small>${escHtml(ready.missing.join(', '))}</span>`}</div>`}</div></div>
+ <details><summary>Blast-source details</summary><table><tr><th>Source</th><th>Value</th></tr><tr><td>Aspirate/manual differential</td><td>${m.blastAspirate??'—'}${m.blastAspirate!=null?'%':''} · ${escHtml(m.aspirateAdequacy||'Unknown adequacy')}</td></tr><tr><td>Core/IHC</td><td>${m.blastIhcLow!=null?(m.blastIhcLow===m.blastIhcHigh?m.blastIhcLow:m.blastIhcLow+'–'+m.blastIhcHigh)+'%':'—'}</td></tr><tr><td>Flow crosscheck</td><td>${m.blastFlow??'—'}${m.blastFlow!=null?'%':''}</td></tr></table></details>
+ ${rb}
+ <div class="mutedbox" style="margin-top:10px"><b>BMBx assessment details</b><br><span class=small>PB blasts: <b>${escHtml(m.pb||'Unknown')}</b>${m.pbBlastPct!=null?' ('+m.pbBlastPct+'%)':''} · EMD: <b>${escHtml(m.emd||'Unknown')}</b>${m.diagnostic?'':` · MRD: <b>${escHtml(m.mrd||'Unknown')}</b>${m.mrdValuePct!=null?' · '+m.mrdValuePct+'%':''}`}</span>${m.manualNotes?`<div class=small style="margin-top:6px"><b>Note:</b> ${escHtml(m.manualNotes)}</div>`:''}</div>
+ <details><summary>Parsed flow/genetics details</summary><p><b>Blast immunophenotype</b><br>${(m.flow||[]).map(x=>`<span class="pill ${x.result==='Positive'?'flowpos':x.result==='Negative'?'flowneg':'neutral'}">${flowDisplay(x)}</span>`).join(' ')||'<span class=small>Blast immunophenotype not confidently extracted.</span>'}</p><p><b>NGS</b><br>${(m.mutations||[]).map(x=>`<span class="pill ${x.classification==='VUS'?'ngsvus':x.result==='Positive'?'ngspos':'ngsneg'}">${x.result==='Negative'?escHtml(x.gene+' Negative'):variantDisplay(x)}</span>`).join(' ')||'<span class=small>No structured NGS observations.</span>'}</p><p><b>Conventional cytogenetics</b><br>${cytoDescriptorChips(m).map(x=>`<span class="pill neutral">${escHtml(x)}</span>`).join(' ')} ${(m.cytoObservations||[]).map(x=>`<span class="pill neutral">${escHtml(x.abnormality)}</span>`).join(' ')}</p><p><b>FISH</b><br>${(m.fishObservations||[]).map(x=>`<span class="pill ${x.result==='Positive'?'fishpos':'fishneg'}">${escHtml(x.target+' '+x.result)}</span>`).join(' ')}</p></details>
+ <div class=actions><button class="btn alt" onclick="editMarrow(${i})">Edit BMBx</button><button class="btn danger" onclick="delMarrow(${i})">Delete BMBx</button></div></div></details>`
+}).join(''):'<p class=help>No confirmed BMBx assessments yet.</p>';
 
  $('cbctable').innerHTML=D.cbc.length?`<table><tr><th>Date/time</th><th>Dx day</th><th>ANC</th><th>ANC source</th><th>Platelets</th><th>Source</th><th></th></tr>${D.cbc.map((x,i)=>`<tr><td>${displayDate(x.date)} ${x.timestamp.slice(11,16)}</td><td>${dxday(x.date)}</td><td>${x.anc??''}</td><td>${x.anc_source||''}</td><td>${x.plt??''}</td><td>${x.source||''}</td><td><button class="btn alt" onclick="editCBC(${i})">Edit</button> <button class="btn danger" onclick="delCBC(${i})">Delete</button></td></tr>`).join('')}</table>`:'<p class=help>No confirmed CBC data.</p>';
 
  let dm=D.marrows.find(x=>x.diagnostic);if(dm){D.base.dx_auto=dm.date;if(!D.base.dx||!D.base.dx_overridden)D.base.dx=dm.date}let e=eln(),bp=dm?preferredBlast(dm):{value:null,source:''};
+ if($('markerStatusCard')){let keys=['NPM1','FLT3-ITD','FLT3-TKD','IDH1','IDH2','NRAS','KRAS','KMT2A','TP53'];$('markerStatusCard').innerHTML=`<table><tr><th>Marker</th><th>Status</th><th>Evidence</th><th>Override</th></tr>${keys.map(k=>{let s=markerStatus(dm,k),o=D.base.marker_overrides?.[k]||'Automatic';return `<tr><td><b>${k}</b></td><td>${s.status}</td><td class=small>${escHtml(s.evidence)}</td><td><select onchange="setMarkerOverride('${k}',this.value)"><option ${o==='Automatic'?'selected':''}>Automatic</option><option ${o==='Positive'?'selected':''}>Positive</option><option ${o==='Negative'?'selected':''}>Negative</option><option ${o==='Unknown'?'selected':''}>Unknown</option></select></td></tr>`}).join('')}</table>`}
+
  $('bb').textContent=bp.value!=null?bp.value+'%':'—';$('bbsrc').textContent=bp.source;$('e22').textContent=e[0];$('e22w').textContent=e[1];$('e24').textContent=e[2];$('e24w').textContent=e[3];
 
  let bc=baselineCBC(),br=bc.row;
@@ -1361,17 +1381,17 @@ function render(){
  let pr=problems();$('issues').innerHTML=pr.length?pr.map(x=>`<div class=stage>⚠ ${x}</div>`).join(''):'<div class=good>No current QA issues.</div>';
 
  let ev=[];if(D.base.dx)ev.push([D.base.dx,'AML diagnosis · Dx+0']);
- D.cycles.forEach(c=>{if(c.start)ev.push([c.start,`Cycle ${c.n} ${c.hma}/VEN start · ${dxday(c.start)}`]);if(c.venEnd)ev.push([c.venEnd,`Cycle ${c.n} VEN final dose · ${dxday(c.venEnd)}`])});
- D.marrows.forEach(m=>{let resp=classifyResponse(m),pb=preferredBlast(m);ev.push([m.date,`${m.diagnostic?'Diagnostic marrow':'Marrow'} · ${resp}${pb.value!=null?' · '+pb.value+'% blasts':''} · ${dxday(m.date)}`])});
+ D.cycles.forEach(c=>{if(c.start)ev.push([c.start,`${cycleLabel(c)} ${c.hma}/VEN start · ${dxday(c.start)}`]);if(c.venEnd)ev.push([c.venEnd,`${cycleLabel(c)} VEN final dose · ${dxday(c.venEnd)}`])});
+ D.marrows.forEach((m,i)=>{let resp=classifyResponse(m),pb=preferredBlast(m);ev.push([m.date,`BMBx ${i+1}${m.diagnostic?' · Diagnostic':''} · ${resp}${pb.value!=null?' · '+pb.value+'% blasts':''} · ${dxday(m.date)}`])});
  if(D.out.hsctd)ev.push([D.out.hsctd,'AlloHSCT · '+dxday(D.out.hsctd)]);if(D.out.relapse_date_final)ev.push([D.out.relapse_date_final,'Relapse · '+(D.out.relapse_basis||'basis unspecified')+' · '+dxday(D.out.relapse_date_final)]);if(D.out.death)ev.push([D.out.death,'Death · '+dxday(D.out.death)]);
  ev.sort((a,b)=>a[0].localeCompare(b[0]));$('tl').innerHTML=ev.map(x=>`<div class=event><b>${displayDate(x[0])}</b><div>${x[1]}</div></div>`).join('')||'<p class=help>No dated events.</p>'
 }
 function dl(n,t,type='text/plain'){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type}));a.download=n;a.click()}
-function jsonOut(){dl((D.base.study||'AML-demo')+'_V2.10.json',JSON.stringify(D,null,2),'application/json')}
+function jsonOut(){dl((D.base.study||'AML-demo')+'_V3.0.json',JSON.stringify(D,null,2),'application/json')}
 function csv(rows){if(!rows.length)return'';let k=[...new Set(rows.flatMap(Object.keys))];return[k.join(','),...rows.map(r=>k.map(x=>`"${String(r[x]??'').replaceAll('"','""')}"`).join(','))].join('\n')}
 function csvOut(k){
  let r=k==='cycles'?D.cycles.map(x=>({study_id:D.base.study,...x})):
- k==='marrows'?D.marrows.map(x=>{let pb=preferredBlast(x),rw=responseWindow(x);return{study_id:D.base.study,marrow_id:x.id,date:x.date,diagnostic:x.diagnostic,blast_aspirate:x.blastAspirate,blast_flow:x.blastFlow,blast_ihc_low:x.blastIhcLow,blast_ihc_high:x.blastIhcHigh,preferred_blast:pb.value,preferred_blast_source:pb.source,peripheral_blood_blasts:x.pb||'',extramedullary_disease:x.emd||'',mrd_status:x.mrd||'',mrd_methods:(x.mrdMethods||[]).join('; '),mrd_target:x.mrdTarget||'',mrd_other:x.mrdOther||'',marrow_note:x.manualNotes||'',cytogenetic_category:deriveCytogenetics(x).category,cytogenetic_observations_json:JSON.stringify(x.cytoObservations||cytogeneticObservations(x.raw?.cyto||'')),mr_cytogenetic_abnormalities_json:JSON.stringify(mrCytoComposite(x.raw?.cyto||'',deriveCytogenetics(x))),ngs_variants_json:JSON.stringify((x.mutations||[]).filter(v=>v.result==='Positive')),fish_observations_json:JSON.stringify(x.fishObservations||fishparse(x.raw?.fish||'')),calculated_response:classifyResponse(x),response_window_mode:rw.mode,response_window_end:rw.end,cycle:cyc(x.date)?.n||''}}):
+ k==='marrows'?D.marrows.map(x=>{let pb=preferredBlast(x),rw=responseWindow(x);return{study_id:D.base.study,marrow_id:x.id,date:x.date,diagnostic:x.diagnostic,blast_aspirate:x.blastAspirate,blast_flow:x.blastFlow,blast_ihc_low:x.blastIhcLow,blast_ihc_high:x.blastIhcHigh,preferred_blast:pb.value,preferred_blast_source:pb.source,peripheral_blood_blasts:x.pb||'',extramedullary_disease:x.emd||'',mrd_status:x.mrd||'',mrd_methods:(x.mrdMethods||[]).join('; '),mrd_target:x.mrdTarget||'',mrd_value_pct:x.mrdValuePct,mrd_lod_pct:x.mrdLOD,mrd_specimen:x.mrdSpecimen||'',mrd_lab:x.mrdLab||'',mrd_other:x.mrdOther||'',marrow_note:x.manualNotes||'',cytogenetic_category:deriveCytogenetics(x).category,cytogenetic_observations_json:JSON.stringify(x.cytoObservations||cytogeneticObservations(x.raw?.cyto||'')),mr_cytogenetic_abnormalities_json:JSON.stringify(mrCytoComposite(x.raw?.cyto||'',deriveCytogenetics(x))),ngs_variants_json:JSON.stringify((x.mutations||[]).filter(v=>v.result==='Positive')),fish_observations_json:JSON.stringify(x.fishObservations||fishparse(x.raw?.fish||'')),calculated_response:classifyResponse(x),response_window_mode:rw.mode,response_window_end:rw.end,cycle:cyc(x.date)?.n||''}}):
  k==='cbc'?D.cbc.map(x=>({study_id:D.base.study,...x})):
  k==='cytogenetics'?D.marrows.flatMap(m=>{
    let derived=deriveCytogenetics(m),mr=mrCytoComposite(m.raw?.cyto||'',derived);

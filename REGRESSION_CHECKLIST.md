@@ -1,44 +1,31 @@
-# V2.10 regression checklist
+# V3.0 Regression Checklist
 
-V2.8 is the frozen UI baseline for V2.9.
+## Chronology/navigation
+- Enter cycles out of order and verify automatic chronological renumbering.
+- Edit a start date across another cycle and verify reordering.
+- Duplicate cycle start dates produce a QA warning.
+- Enter BMBx records out of order and verify BMBx 1/2/3 follow date chronology.
+- Cycle and BMBx cards collapse/expand; Expand all/Collapse all work.
 
-## Required UI
-- Quick Import
-- Baseline
-- Treatment Cycles
-- Bone Marrows
-- CBC Trend
-- Outcomes
-- Timeline / QA
-- Export
-- Manual marrow add/edit/delete
-- Structured data review
-- Raw source review
-- Flow, NGS, conventional cytogenetics, FISH, MRD editors
-- JSON and CSV exports
-- Permanent HMA/VEN discontinuation fields
+## Response
+- Adequate aspirate morphology outranks flow.
+- Hemodilute/aspicular aspirate does not silently outrank IHC/flow.
+- PR-eligible marrow with missing counts says Pending count recovery data.
+- ANC and platelet candidate CBCs can be selected independently.
+- Manual count override still works.
 
-## Permanent parser fixture
-For the diagnostic AML marrow used during V2.8 QI, expected structured results include:
-- aspirate blasts 3.5%
-- flow blasts 30%
-- IHC 20-25%
-- flow preferred when adequate
-- TP53 p.(G244S), VAF 43.05%
-- TP53 p.(P151S), VAF 39.55%
-- EZH2 p.(M24T), VAF 48.57%, VUS
-- FISH del(5q) positive
-- FISH del(20q12) positive
-- three copies RUNX1 positive
-- FISH t(8;21) negative and never a positive cyto hit
-- flow modifiers remain attached only to their own markers
+## ELN
+- Complex/monosomal/adverse cytogenetics can drive ELN 2022 Adverse.
+- NPM1 + FLT3-ITD = Intermediate unless adverse lesion present.
+- NPM1 + explicitly FLT3-ITD negative = Favorable absent adverse lesion.
+- TP53 mutation = ELN 2022 Adverse and ELN 2024 LI Adverse.
+- Unknown FLT3-ITD/NRAS/KRAS/TP53 coverage is not assumed negative.
+- Prior HMA => ELN 2024 LI Not applicable.
 
+## MRD
+- Numeric MRD %, LOD/sensitivity %, specimen, and laboratory save and export.
+- Diagnostic BMBx remains MRD not applicable.
 
-## V2.10 additions
-- PB blast status defaults to Unknown unless explicitly supported by source.
-- Explicit PB blast percentage is retained.
-- EMD defaults to Unknown.
-- Aspirate adequacy is retained and affects source hierarchy.
-- VUS remains in detailed NGS/export but is excluded from executive summary.
-- Conventional cytogenetics appears in detailed marrow view.
-- Raw cytogenetic/FISH observations remain preserved alongside canonical normalization.
+## Robustness
+- Cycle notes containing HTML-like characters render as text.
+- No V2.10 UI element IDs are lost.

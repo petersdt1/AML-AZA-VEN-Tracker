@@ -1,314 +1,186 @@
-function extractPBBlastData(path){
- let text=String(path||''),section='';
- let sm=text.match(/Peripheral\s+(?:Smear|smear)\s*:?\s*([\s\S]*?)(?=\n\s*Bone\s+Marrow\s*:|$)/i);
- if(sm)section=sm[1];
- else{let pb=text.match(/Peripheral\s+blood[\s\S]{0,1500}/i);section=pb?pb[0]:''}
- let pct=null,status='Unknown';
- let m=section.match(/\bBlasts?\s*%\s*(?:[:\t ]|\r?\n)+([0-9.]+)/i);
- if(m){pct=Number(m[1]);status=pct>0?'Present':'Absent'}
- else if(/\b(?:no|without)\s+(?:circulating|peripheral(?:\s+blood)?)?\s*blasts?\b/i.test(section))status='Absent';
- else if(/\b(?:rare|occasional|circulating)\s+blast(?:s|\s+cells?)\b/i.test(section))status='Present';
- return{status,pct}
-}
-
-function extractAspirateAdequacy(path){
- let text=String(path||''),section='';
- let m=text.match(/Aspirate(?:\s+and\s+touch\s+imprint)?\s*:?\s*([\s\S]*?)(?=\n\s*Differential\s*:|\n\s*Special\s+Stains\s*:|$)/i);
- section=m?m[1]:text;
- let hemo=/hemodilut/i.test(section),asp=/aspicular|aparticulate|no\s+spicules/i.test(section);
- if(hemo&&asp)return'Hemodilute + aspicular';
- if(hemo)return'Hemodilute / limited';
- if(asp)return'Aspicular / aparticulate';
- if(/\badequate\b|\bspicules?\s+(?:present|identified)\b/i.test(section))return'Adequate';
- return'Unknown'
-}
-
-function extractBlastData(path,flow){
- let out={aspirate:null,flow:null,ihcLow:null,ihcHigh:null,flowAdequate:true,flowPossibleUnparsed:false};
-
- // Aspirate/manual differential: prose patterns.
- let m=path.match(/(?:aspirate|manual differential)[^.\n]{0,100}?(?:blasts?|blast count)[^0-9]{0,20}([0-9.]+)\s*%/i);
- if(!m)m=path.match(/(?:blasts?|blast count)[^0-9]{0,20}([0-9.]+)\s*%[^.\n]{0,80}(?:aspirate|manual differential)/i);
-
- // Bone-marrow differential table. Scope the search to the Differential section so
- // peripheral-blood "Blasts %" is not mistaken for marrow aspirate blasts.
- if(!m){
-   let dm=path.match(/\bDifferential\s*:?\s*([\s\S]{0,1200}?)(?=\n\s*(?:Special\s+Stains|IHC\/ISH|Immunohistochem|Comment|$))/i);
-   if(dm)m=dm[1].match(/(?:^|[\r\n])\s*Blast\s*%\s*(?:[:\t ]|\r?\n)*([0-9.]+)/i);
- }
- // Common exported table layout: "Differential:" followed by "Blast % <tab> 3.5".
- if(!m)m=path.match(/\bDifferential\s*:?\s*[\s\S]{0,300}?\bBlast\s*%\s*(?:[:\t ]|\r?\n)+([0-9.]+)/i);
- if(m)out.aspirate=Number(m[1]);
-
- // Flow blast percentage: accept "blasts", "myeloid blasts", or "myeloblasts".
- let flowPatterns=[
-   /(?:myeloblasts?|myeloid\s+blasts?|blasts?)[^0-9]{0,40}([0-9.]+)\s*%/i,
-   /(?:increased\s+)?aberrant\s+(?:myeloid\s+)?(?:blasts?|myeloblasts?)[^0-9]{0,40}([0-9.]+)\s*%/i
- ];
- let fm=null;
- for(let re of flowPatterns){fm=String(flow||'').match(re);if(fm)break}
- if(!fm)fm=path.match(/flow\s+cytometry[^.\n]{0,140}?(?:myeloblasts?|myeloid\s+blasts?|blasts?)[^0-9]{0,40}([0-9.]+)\s*%/i);
- if(fm)out.flow=Number(fm[1]);
-
- if(out.flow==null && /flow\s+cytometry[^.\n]{0,160}?(?:myeloblasts?|myeloid\s+blasts?|blasts?)/i.test(path)){
-   out.flowPossibleUnparsed=true;
- }
-
- // Core/IHC blast estimate, including ranges.
- let range=path.match(/(?:CD34|CD117|IHC|immunohistochem|blasts?)[^.\n]{0,80}?([0-9.]+)\s*(?:-|–|to)\s*([0-9.]+)\s*%/i);
- if(range){out.ihcLow=Number(range[1]);out.ihcHigh=Number(range[2])}
- else{
-   let im=path.match(/(?:CD34|CD117|IHC|immunohistochem)[^.\n]{0,80}?([0-9.]+)\s*%/i);
-   if(im){out.ihcLow=out.ihcHigh=Number(im[1])}
- }
- return out
-}
-
-function blastPhenotypeText(s){
- let raw=String(s||'').replace(/\r/g,'');
- if(!raw.trim())return'';
- let paras=raw.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);
- let scored=paras.map(p=>{
-   let score=0;
-   if(/these\s+(?:cells\s+)?exhibit\s+the\s+following\s+immunophenotype/i.test(p))score+=10;
-   if(/\b(?:blast|blasts|leukemic|abnormal\s+(?:myeloid|blast)|immature\s+myeloid)\b/i.test(p))score+=6;
-   if(/\bCD34\s+positive\s+cells\b/i.test(p))score+=7;
-   if(/\bpositive\s+for\b/i.test(p)&&/\bnegative\s+for\b/i.test(p))score+=4;
-   if(/\bimmunophenotype\b/i.test(p))score+=2;
-   if(/antibod(?:y|ies)|this\s+analysis\s+includes|gating/i.test(p))score-=8;
-   if(/\bB\s+cells\b|\bT\s+cells\b|\bNK\b/i.test(p)&&!/\bblast/i.test(p))score-=4;
-   return{p,score}
- }).sort((a,b)=>b.score-a.score);
- return scored[0]?.score>=5?scored[0].p:''
-}
-
-function parseMarkerList(text,result){
- let out=[];
- // Split the phenotype list into marker-sized phrases first. This prevents
- // modifiers such as "dim", "heterogeneous", or "equivocal" from bleeding
- // into adjacent markers.
- let chunks=String(text||'')
-   .replace(/\r?\n/g,' ')
-   .split(/\s*[,;]\s*|\s+\band\b\s+(?=(?:(?:equivocal|bright|moderate|dim|partial|variable|heterogeneous|heterogenous|aberrant)\s+)*(?:(?:cy)?CD\d{1,3}|HLA-DR|MPO|TdT)\b)/i)
-   .map(x=>x.trim()).filter(Boolean);
- chunks.forEach(chunk=>{
-   let mm=chunk.match(/\b((?:cy)?CD\d{1,3}|HLA-DR|MPO|TdT)\b/i);
-   if(!mm)return;
-   let marker=mm[1].toUpperCase();
-   let local=chunk;
-   let mods=[];
-   let modifierMatches=local.match(/\b(bright|moderate|dim|partial|variable|heterogeneous|heterogenous|aberrant|limited subset)\b/gi)||[];
-   modifierMatches.forEach(x=>{
-     x=x.toLowerCase().replace('heterogenous','heterogeneous');
-     if(!mods.includes(x))mods.push(x)
-   });
-   let r=/\bequivocal\b/i.test(local)?'Equivocal':result;
-   out.push({marker,result:r,modifier:mods.join('/'),conflict:false})
+function chronologySort(){
+ D.cycles.sort((a,b)=>{
+   if(a.start&&b.start){let c=a.start.localeCompare(b.start);if(c)return c}
+   else if(a.start&&!b.start)return-1;
+   else if(!a.start&&b.start)return 1;
+   return String(a.id||'').localeCompare(String(b.id||''))
  });
- return out
+ let n=0;D.cycles.forEach(c=>{c.n=c.start?++n:null});
+ D.marrows.sort((a,b)=>String(a.date||'9999-99-99').localeCompare(String(b.date||'9999-99-99'))||String(a.id||'').localeCompare(String(b.id||'')))
 }
 
-function flowparse(s){
- let p=blastPhenotypeText(s);
- if(!p)return[];
- let out=[];
- // Explicit anchor marker such as "CD34 positive cells..."
- let anchor=p.match(/\b((?:cy)?CD\d{1,3}|HLA-DR|MPO|TdT)\s+positive\s+cells\b/i);
- if(anchor)out.push({marker:anchor[1].toUpperCase(),result:'Positive',modifier:'',conflict:false});
- // Main positive and negative phenotype lists.
- let pos=p.match(/\bpositive\s+for\s+(.+?)(?=\band\s+negative\s+for\b|\bnegative\s+for\b|[.]\s*$)/is);
- let neg=p.match(/\bnegative\s+for\s+(.+?)(?=[.]|$)/is);
- if(pos)out.push(...parseMarkerList(pos[1],'Positive'));
- if(neg)out.push(...parseMarkerList(neg[1].replace(/\bremaining\s+markers\b.*$/i,''),'Negative'));
- // Some reports use "expressing ..." rather than "positive for".
- if(!pos){
-   let exp=p.match(/\b(?:express(?:es|ing)|phenotype[:\s]+)(.+?)(?=\bnegative\s+for\b|[.]\s*$)/is);
-   if(exp)out.push(...parseMarkerList(exp[1],'Positive'))
+function preferredBlast(m){
+ if(m.preferredBlastManual!==null&&m.preferredBlastManual!==undefined&&m.preferredBlastManual!=='')return{value:Number(m.preferredBlastManual),source:'Manual adjudication',indeterminate:false};
+ let limited=/Hemodilute|Aspicular|aparticulate/i.test(m.aspirateAdequacy||'');
+ if(m.blastAspirate!=null&&!limited)return{value:Number(m.blastAspirate),source:'Aspirate/manual differential (adequate morphology)',indeterminate:false};
+ if(m.blastIhcLow!=null&&m.blastIhcHigh!=null){
+   if(Number(m.blastIhcLow)===Number(m.blastIhcHigh))return{value:Number(m.blastIhcLow),source:'Core/IHC',indeterminate:false};
+   if(Number(m.blastIhcLow)<5&&Number(m.blastIhcHigh)>=5)return{value:null,source:`Core/IHC range ${m.blastIhcLow}–${m.blastIhcHigh}% crosses 5% threshold`,indeterminate:true};
+   return{value:Number(m.blastIhcHigh),source:`Core/IHC range ${m.blastIhcLow}–${m.blastIhcHigh}% (upper bound used)`,indeterminate:false};
  }
- // Consolidate identical marker/result observations and merge modifiers.
- let keyMap={};
- out.forEach(x=>{
-   let k=x.marker+'|'+x.result;
-   if(!keyMap[k])keyMap[k]={...x};
-   else{
-     let mods=[...(keyMap[k].modifier||'').split('/'),...(x.modifier||'').split('/')].filter(Boolean);
-     keyMap[k].modifier=[...new Set(mods)].join('/')
-   }
- });
- return Object.values(keyMap)
+ if(m.blastFlow!=null&&m.flowAdequate!==false)return{value:Number(m.blastFlow),source:'Flow cytometry crosscheck (morphology unavailable/limited)',indeterminate:false};
+ if(m.blastAspirate!=null)return{value:Number(m.blastAspirate),source:`Aspirate/manual differential (${m.aspirateAdequacy||'limited'}; adjudication recommended)`,indeterminate:true};
+ return{value:null,source:'No structured blast source',indeterminate:true}
 }
 
-function normalizeAMLAbnormality(raw){
- let s=String(raw||'').trim(),x=s.toLowerCase();
- if(/(?:^|[,\s])-5(?:$|[,\s])|monosomy\s*5/i.test(x))return{canonical:'-5',concept:'chr5/5q loss',concept_label:'chr5/5q loss'};
- if(/del(?:etion)?\s+(?:of\s+)?5q|del(?:etion)?\s*\(?5\)?(?:\([^)]*q|q)|5q\s+delet|loss\s+of\s+5q/i.test(x))return{canonical:'del(5q)',concept:'chr5/5q loss',concept_label:'chr5/5q loss'};
- if(/(?:^|[,\s])-7(?:$|[,\s])|monosomy\s*7/i.test(x))return{canonical:'-7',concept:'chr7/7q loss',concept_label:'chr7/7q loss'};
- if(/del(?:etion)?\s+(?:of\s+)?7q|del(?:etion)?\s*\(?7\)?(?:\([^)]*q|q)|7q\s+delet|loss\s+of\s+7q/i.test(x))return{canonical:'del(7q)',concept:'chr7/7q loss',concept_label:'chr7/7q loss'};
- if(/(?:^|[,\s])\+8(?:$|[,\s])|trisomy\s*8/i.test(x))return{canonical:'+8',concept:'trisomy 8',concept_label:'trisomy 8'};
- if(/del(?:etion)?\s+(?:of\s+)?20q|del(?:etion)?.*20q|20q(?:12)?\s+delet/i.test(x))return{canonical:'del(20q)',concept:'20q loss',concept_label:'del(20q)'};
- if(/t\s*\(\s*8\s*;\s*21\s*\)|runx1\s*::?\s*runx1t1/i.test(x))return{canonical:'t(8;21)/RUNX1::RUNX1T1',concept:'RUNX1::RUNX1T1',concept_label:'RUNX1::RUNX1T1'};
- if(/inv\s*\(\s*16\s*\)|t\s*\(\s*16\s*;\s*16\s*\)|inv16|cbfb\s*::?\s*myh11/i.test(x))return{canonical:'inv(16)/t(16;16)/CBFB::MYH11',concept:'CBFB::MYH11',concept_label:'CBFB::MYH11'};
- if(/t\s*\(\s*15\s*;\s*17\s*\)|pml\s*::?\s*rara/i.test(x))return{canonical:'t(15;17)/PML::RARA',concept:'PML::RARA',concept_label:'PML::RARA'};
- if(/11q23|kmt2a.*rearrange|rearrangement.*kmt2a/i.test(x))return{canonical:'KMT2A rearrangement',concept:'KMT2A rearrangement',concept_label:'KMT2A rearrangement'};
- if(/3q26|mecom.*rearrange|rearrangement.*mecom/i.test(x))return{canonical:'MECOM rearrangement',concept:'MECOM rearrangement',concept_label:'MECOM rearrangement'};
- if(/three\s+copies\s+of\s+runx1|runx1.*(?:copy|copies|gain)/i.test(x))return{canonical:'RUNX1 copy gain',concept:'RUNX1 copy gain',concept_label:'RUNX1 copy gain'};
- if(/del(?:etion)?.*17p|17p\s+delet/i.test(x))return{canonical:'del(17p)',concept:'17p loss',concept_label:'17p loss'};
- return{canonical:s,concept:'unmapped:'+s.toLowerCase(),concept_label:s}
+function classifyResponse(m){
+ if(m.diagnostic)return 'Baseline / not response-evaluable';
+ let fc=firstCycle();if(!fc||m.date<fc.start)return 'Pretreatment / not response-evaluable';
+ let pb=preferredBlast(m);if(pb.indeterminate||pb.value==null)return 'Needs blast adjudication';
+ if(!m.pb||m.pb==='Unknown'||!m.emd||m.emd==='Unknown')return 'Pending response completion';
+ let r=responseWindow(m),bm=pb.value,anc=r.fa?.anc,plt=r.fp?.plt;
+ if(bm<5&&m.pb!=='Present'&&m.emd==='Absent/resolved'){if(anc==null||plt==null)return'Pending count recovery data';if(anc>=1&&plt>=100)return r.mode==='provisional'?'Provisional CR':'CR';if(anc>=0.5&&plt>=50)return r.mode==='provisional'?'Provisional CRh':'CRh';if(anc>=1||plt>=100)return r.mode==='provisional'?'Provisional CRi':'CRi';return r.mode==='provisional'?'Provisional MLFS':'MLFS'}
+ if(bm>=5&&bm<=25){let d=D.marrows.find(x=>x.diagnostic),base=preferredBlast(d||{}).value;if(Number.isFinite(base)&&bm<=base*0.5){if(anc==null||plt==null)return'Pending count recovery data';if(anc>=1&&plt>=100)return r.mode==='provisional'?'Provisional PR':'PR'}}
+ return 'No response'
 }
 
-function withAMLNormalization(o,field){
- let n=normalizeAMLAbnormality(o?.[field]||'');
- return{...o,canonical:n.canonical,concept:n.concept,concept_label:n.concept_label}
-}
-
-function fishparse(s){
- let raw=String(s||'').replace(/\r/g,''),out=[],seen=new Set();
- if(!raw.trim())return out;
-
- function normTarget(t){
-   return String(t||'').trim().replace(/\s+/g,' ')
-     .replace(/\s*\(SEE BELOW\)\s*$/i,'')
+function markerAutoStatus(m,key){
+ if(!m)return{status:'Unknown',evidence:'No diagnostic BMBx'};
+ let pos=(m.mutations||[]).filter(x=>x.result==='Positive'&&x.classification!=='VUS'),neg=(m.mutations||[]).filter(x=>x.result==='Negative');
+ let raw=[m.raw?.ngspos,m.raw?.ngstest,...pos.map(x=>x.raw_description||'')].join('\n');
+ if(key==='FLT3-ITD'){
+   if(pos.some(x=>x.gene==='FLT3'&&/\bITD\b|internal tandem/i.test([x.protein,x.cdna,x.raw_description].join(' '))))return{status:'Positive',evidence:'FLT3-ITD detected'};
+   if(/\bFLT3[-\s]?ITD\b[^.\n]{0,50}(?:not detected|negative|wild[- ]?type)/i.test(raw))return{status:'Negative',evidence:'FLT3-ITD explicitly negative'};
+   return{status:'Unknown',evidence:'Generic FLT3 testing does not establish ITD result'}
  }
- function canonical(t){
-   let x=normTarget(t).toLowerCase()
-     .replace(/deletion/g,'del').replace(/\s+/g,'')
-     .replace(/[().:_-]/g,'');
-   if(/(?:del)?5q/.test(x))return'del5q';
-   if(/(?:del)?20q(?:12)?/.test(x))return'del20q';
-   if(/threecopiesofrunx1|runx1.*threecopies/.test(x))return'runx1copygain';
-   return x
+ if(key==='FLT3-TKD'){
+   if(pos.some(x=>x.gene==='FLT3'&&/\bTKD\b|D835|I836|tyrosine kinase domain/i.test([x.protein,x.cdna,x.raw_description].join(' '))))return{status:'Positive',evidence:'FLT3-TKD detected'};
+   if(/\bFLT3[-\s]?TKD\b[^.\n]{0,50}(?:not detected|negative|wild[- ]?type)/i.test(raw))return{status:'Negative',evidence:'FLT3-TKD explicitly negative'};
+   return{status:'Unknown',evidence:'Generic FLT3 testing does not establish TKD result'}
  }
- function add(target,result,desc){
-   target=normTarget(target);if(!target)return;
-   let key=canonical(target)+'|'+result;
-   if(seen.has(key))return;
-   seen.add(key);out.push(withAMLNormalization({target,result,raw_description:String(desc||'').trim()},'target'))
+ if(key==='KMT2A'){
+   if((m.fishObservations||[]).some(x=>x.result==='Positive'&&/KMT2A|11q23/i.test(x.target||''))||pos.some(x=>x.gene==='KMT2A'&&/rearrange|fusion|::/i.test(x.raw_description||'')))return{status:'Positive',evidence:'KMT2A rearrangement/fusion detected'};
+   if(neg.some(x=>x.gene==='KMT2A')||(m.fishObservations||[]).some(x=>x.result==='Negative'&&/KMT2A|11q23/i.test(x.target||'')))return{status:'Negative',evidence:'KMT2A explicitly tested negative'};
+   if(pos.some(x=>x.gene==='KMT2A'))return{status:'Unknown',evidence:'KMT2A sequence variant present but rearrangement status not established'};
+   return{status:'Unknown',evidence:'Not explicitly tested'}
  }
-
- // One explicit assay result per line. This is intentionally conservative.
- raw.split(/\n+/).map(x=>x.trim()).filter(Boolean).forEach(line=>{
-   let lm=line.match(/^(.*?)\s*[–—-]\s*(Not\s+Detected|Detected|Positive|Negative)\b(.*)$/i);
-   if(!lm)return;
-   let target=lm[1].trim(),result=/not\s+detected|negative/i.test(lm[2])?'Negative':'Positive';
-   // Require a recognizable FISH-style target so prose with hyphens is ignored.
-   if(!/(del(?:etion)?|monosomy|trisomy|rearrangement|copies|t\(|inv|runx1|cbfb|rara|kmt2a|mecom|3q26|11q23)/i.test(target))return;
-   add(target,result,line)
- });
-
- // Summary positives are useful when no explicit positive line gives that finding.
- let posLine=raw.split(/\n+/).find(x=>/^\s*POSITIVE\s+for\b/i.test(x));
- if(posLine){
-   if(/deletion\s+of\s+5q/i.test(posLine)&&!out.some(x=>x.result==='Positive'&&canonical(x.target)==='del5q'))
-     add('Deletion of 5q','Positive',posLine);
-   if(/(?:deletion\s+of\s+)?20q/i.test(posLine)&&!out.some(x=>x.result==='Positive'&&canonical(x.target)==='del20q'))
-     add('Deletion of 20q','Positive',posLine);
-   if(/three\s+copies\s+of\s+RUNX1/i.test(posLine)&&!out.some(x=>x.result==='Positive'&&canonical(x.target)==='runx1copygain'))
-     add('Three copies of RUNX1','Positive',posLine);
- }
- return out
+ if(pos.some(x=>x.gene===key))return{status:'Positive',evidence:`${key} detected`};
+ if(neg.some(x=>x.gene===key))return{status:'Negative',evidence:`${key} explicitly assayed and not detected`};
+ return{status:'Unknown',evidence:'Not explicitly tested'}
 }
 
-function structuredCytoHits(cytoObs,fishObs){
- let hits=[];
- (cytoObs||[]).forEach(x=>{if((x.result||'Present')==='Present'&&x.abnormality)hits.push(x.abnormality)});
- (fishObs||[]).forEach(x=>{if(x.result==='Positive'&&x.target)hits.push(x.target)});
- return [...new Set(hits)]
+function markerStatus(m,key){
+ let o=D.base.marker_overrides?.[key];if(o&&o!=='Automatic')return{status:o,evidence:'Manual structured override'};return markerAutoStatus(m,key)
 }
 
-function splitTopLevel(s){
- let out=[],cur='',depth=0;
- for(let ch of s){if(ch==='(')depth++;if(ch===')')depth=Math.max(0,depth-1);if(ch===','&&depth===0){out.push(cur.trim());cur=''}else cur+=ch}
- if(cur.trim())out.push(cur.trim());return out
+function eln2022AdverseCytogenetics(m){
+ if(!m)return[];let hits=[],d=deriveCytogenetics(m),s=[...(m.cytoObservations||[]).map(x=>x.abnormality||''),...(m.fishObservations||[]).filter(x=>x.result==='Positive').map(x=>x.target||''),m.raw?.cyto||'',m.raw?.fish||''].join(' ');
+ if(d.category.includes('Complex'))hits.push('complex karyotype');if(d.category.includes('Monosomal'))hits.push('monosomal karyotype');
+ [[/(\-5\b|del\s*\(?5|5q.*del)/i,'-5/del(5q)'],[/(\-7\b|monosomy\s*7)/i,'-7'],[/(\-17\b|17p.*(?:abn|del)|del\s*\(?17)/i,'-17/abn(17p)'],[/(inv\s*\(?3|t\s*\(?3\s*;\s*3|MECOM.*rearr|3q26.*MECOM)/i,'MECOM-rearranged'],[/(t\s*\(?6\s*;\s*9|DEK.*NUP214)/i,'DEK::NUP214'],[/(t\s*\(?9\s*;\s*22|BCR.*ABL1)/i,'BCR::ABL1']].forEach(([r,l])=>{if(r.test(s)&&!hits.includes(l))hits.push(l)});
+ let k=markerStatus(m,'KMT2A');if(k.status==='Positive'&&!/t\s*\(?9\s*;\s*11|MLLT3/i.test(s))hits.push('KMT2A rearrangement');return hits
 }
 
-function cytogeneticObservations(raw){
- raw=String(raw||'').trim();if(!raw)return[];
- let out=[],seen=new Set();
- // Parse clone-level ISCN while respecting commas within parentheses.
- raw.split(/\n+/).forEach(line=>{
-   let clean=line.trim();if(!clean)return;
-   clean.split('/').forEach(clone=>{
-     clone=clone.replace(/\[[^\]]*\]/g,'').trim();
-     let parts=splitTopLevel(clone);
-     parts.forEach((x,i)=>{
-       x=x.trim();
-       if(!x||i===0&&/^\d{2,3}$/.test(x)||/^(XX|XY|X|Y)$/i.test(x))return;
-       if(!/^[-+]\d+$|^\+mar\d*$|^-?(?:del|add|inv|t|i|idic|der|dup|ins|dic|r)\(/i.test(x))return;
-       let key=x.toLowerCase();if(!seen.has(key)){seen.add(key);out.push(withAMLNormalization({abnormality:x,result:'Present',source:'Conventional cytogenetics'},'abnormality'))}
-     })
-   })
- });
- return out
+function favorableCBF(m){let s=[m.raw?.cyto||'',m.raw?.fish||'',...(m.cytoObservations||[]).map(x=>x.abnormality||''),...(m.fishObservations||[]).filter(x=>x.result==='Positive').map(x=>x.target||'')].join(' ');if(/t\s*\(?8\s*;\s*21|RUNX1.*RUNX1T1/i.test(s))return'RUNX1::RUNX1T1';if(/inv\s*\(?16|t\s*\(?16\s*;\s*16|CBFB.*MYH11/i.test(s))return'CBFB::MYH11';return''}
+function eln(){
+ let m=D.marrows.find(x=>x.diagnostic);if(!m)return['Pending','No diagnostic BMBx','Pending','No diagnostic BMBx'];
+ let pos=g=>(m.mutations||[]).some(x=>x.gene===g&&x.result==='Positive'&&x.classification!=='VUS'),advGenes=['ASXL1','BCOR','EZH2','RUNX1','SF3B1','SRSF2','STAG2','U2AF1','ZRSR2'].filter(pos);
+ let tp53=markerStatus(m,'TP53').status,itd=markerStatus(m,'FLT3-ITD').status,npm1=markerStatus(m,'NPM1').status,cy=eln2022AdverseCytogenetics(m),cbf=favorableCBF(m);
+ let tp53Rows=(m.mutations||[]).filter(x=>x.gene==='TP53'&&x.result==='Positive'&&x.classification!=='VUS'),tp53Adv=tp53Rows.some(x=>x.vaf!=null&&Number(x.vaf)>=10),tp53VafUnknown=tp53Rows.some(x=>x.vaf==null);
+ let cebpa=(m.mutations||[]).some(x=>x.gene==='CEBPA'&&x.result==='Positive'&&/bZIP|basic leucine zipper/i.test([x.protein,x.raw_description].join(' ')));
+ let e22='Unable to determine',w22='Insufficient structured genetics';
+ if(cbf){e22='Favorable';w22=cbf}
+ else if(cebpa){e22='Favorable';w22='CEBPA bZIP in-frame mutation detected'}
+ else if(tp53Adv||cy.length){e22='Adverse';w22=[tp53Adv?'TP53 mutation VAF ≥10%':'',...cy].filter(Boolean).join(' · ')}
+ else if(tp53==='Positive'&&tp53VafUnknown){e22='Unable to determine';w22='TP53 mutation detected but VAF unavailable for ELN 2022 ≥10% criterion'}
+ else if(npm1==='Positive'){if(itd==='Positive'){e22='Intermediate';w22='NPM1-mutated with FLT3-ITD'}else if(itd==='Negative'){e22='Favorable';w22='NPM1-mutated without FLT3-ITD'}else w22='NPM1 detected; FLT3-ITD status unknown'}
+ else if(advGenes.length){e22='Adverse';w22='MR-gene mutation(s): '+advGenes.join(', ')}
+ else if(itd==='Positive'){e22='Intermediate';w22='FLT3-ITD detected'}
+ else {let s=[m.raw?.cyto,m.raw?.fish].join(' ');if(/t\s*\(?9\s*;\s*11|KMT2A.*MLLT3|MLLT3.*KMT2A/i.test(s)){e22='Intermediate';w22='t(9;11)/KMT2A::MLLT3'}else if(deriveCytogenetics(m).category!=='Unknown'&&(m.mutations||[]).length){e22='Intermediate';w22='No favorable/adverse defining abnormality identified'}}
+ let e24='Unable to determine',w24='Insufficient structured genetics';
+ if(D.base.phma==='Yes'){e24='Not applicable';w24='2024 ELN Less-Intensive does not apply after prior HMA exposure'}
+ else{let nr=markerStatus(m,'NRAS').status,kr=markerStatus(m,'KRAS').status;if(tp53==='Positive'){e24='Adverse';w24='TP53 mutation'}else if(pos('DDX41')){e24='Favorable';w24='DDX41 mutation'}else if(tp53==='Negative'&&[itd,nr,kr].some(x=>x==='Positive')){e24='Intermediate';w24='FLT3-ITD and/or NRAS/KRAS mutation with TP53 wild-type'}else if(tp53==='Negative'&&[itd,nr,kr].every(x=>x==='Negative')){e24='Favorable';w24='TP53 wild-type with FLT3-ITD, NRAS and KRAS negative'}else{let miss=[['TP53',tp53],['FLT3-ITD',itd],['NRAS',nr],['KRAS',kr]].filter(x=>x[1]==='Unknown').map(x=>x[0]);w24='Required status unknown: '+miss.join(', ')}}
+ return[e22,w22,e24,w24]
 }
 
+function eln(){
+ let m=D.marrows.find(x=>x.diagnostic);if(!m)return['Pending','No diagnostic BMBx','Pending','No diagnostic BMBx'];
+ let pos=g=>(m.mutations||[]).some(x=>x.gene===g&&x.result==='Positive'&&x.classification!=='VUS'),advGenes=['ASXL1','BCOR','EZH2','RUNX1','SF3B1','SRSF2','STAG2','U2AF1','ZRSR2'].filter(pos);
+ let tp53=markerStatus(m,'TP53').status,itd=markerStatus(m,'FLT3-ITD').status,npm1=markerStatus(m,'NPM1').status,cy=eln2022AdverseCytogenetics(m),cbf=favorableCBF(m);
+ let tp53Rows=(m.mutations||[]).filter(x=>x.gene==='TP53'&&x.result==='Positive'&&x.classification!=='VUS'),tp53Adv=tp53Rows.some(x=>x.vaf!=null&&Number(x.vaf)>=10),tp53VafUnknown=tp53Rows.some(x=>x.vaf==null);
+ let cebpa=(m.mutations||[]).some(x=>x.gene==='CEBPA'&&x.result==='Positive'&&/bZIP|basic leucine zipper/i.test([x.protein,x.raw_description].join(' ')));
+ let e22='Unable to determine',w22='Insufficient structured genetics';
+ if(cbf){e22='Favorable';w22=cbf}
+ else if(cebpa){e22='Favorable';w22='CEBPA bZIP in-frame mutation detected'}
+ else if(tp53Adv||cy.length){e22='Adverse';w22=[tp53Adv?'TP53 mutation VAF ≥10%':'',...cy].filter(Boolean).join(' · ')}
+ else if(tp53==='Positive'&&tp53VafUnknown){e22='Unable to determine';w22='TP53 mutation detected but VAF unavailable for ELN 2022 ≥10% criterion'}
+ else if(npm1==='Positive'){if(itd==='Positive'){e22='Intermediate';w22='NPM1-mutated with FLT3-ITD'}else if(itd==='Negative'){e22='Favorable';w22='NPM1-mutated without FLT3-ITD'}else w22='NPM1 detected; FLT3-ITD status unknown'}
+ else if(advGenes.length){e22='Adverse';w22='MR-gene mutation(s): '+advGenes.join(', ')}
+ else if(itd==='Positive'){e22='Intermediate';w22='FLT3-ITD detected'}
+ else {let s=[m.raw?.cyto,m.raw?.fish].join(' ');if(/t\s*\(?9\s*;\s*11|KMT2A.*MLLT3|MLLT3.*KMT2A/i.test(s)){e22='Intermediate';w22='t(9;11)/KMT2A::MLLT3'}else if(deriveCytogenetics(m).category!=='Unknown'&&(m.mutations||[]).length){e22='Intermediate';w22='No favorable/adverse defining abnormality identified'}}
+ let e24='Unable to determine',w24='Insufficient structured genetics';
+ if(D.base.phma==='Yes'){e24='Not applicable';w24='2024 ELN Less-Intensive does not apply after prior HMA exposure'}
+ else{let nr=markerStatus(m,'NRAS').status,kr=markerStatus(m,'KRAS').status;if(tp53==='Positive'){e24='Adverse';w24='TP53 mutation'}else if(pos('DDX41')){e24='Favorable';w24='DDX41 mutation'}else if(tp53==='Negative'&&[itd,nr,kr].some(x=>x==='Positive')){e24='Intermediate';w24='FLT3-ITD and/or NRAS/KRAS mutation with TP53 wild-type'}else if(tp53==='Negative'&&[itd,nr,kr].every(x=>x==='Negative')){e24='Favorable';w24='TP53 wild-type with FLT3-ITD, NRAS and KRAS negative'}else{let miss=[['TP53',tp53],['FLT3-ITD',itd],['NRAS',nr],['KRAS',kr]].filter(x=>x[1]==='Unknown').map(x=>x[0]);w24='Required status unknown: '+miss.join(', ')}}
+ return[e22,w22,e24,w24]
+}
 
-const pathology=`Peripheral Smear
-
-WBC	1.92
-Blasts %	2	%
-
-Bone Marrow:
-
-Aspirate and touch imprint:
--The aspirate smears are prominently hemodilute, aspicular.
-
-Differential:
-
-Blast %	3.5
-Promyelocyte %	0.5
-
-Special Stains:
-IHC/ISH: CD34 overall estimated 20-25%.
-
-Flow cytometry reports increased aberrant myeloblasts, 30%.`;
-
-const flow=`CD34 positive cells are 65% of the CD45 gated cells, calculated 23% of total cells from that gate, and approximately 30% of the total gated cells. These exhibit the following immunophenotype, positive for CD34, CD117, dim CD38, CD33, dim CD13, heterogenous dim CD7, HLA-DR (limited subset), CD43, CD59, equivocal dim CD4, and negative for CD19, CD10, CD3, CD123, CD22, remaining markers.`;
-
-const fish=`POSITIVE for deletion of 5q and 20q and three copies of RUNX1
-Rearrangement of 3q26 – Not Detected
-Del 5q – DETECTED
-Monosomy 5 – Not Detected
-Del 7q – Not Detected
-Monosomy 7 – Not Detected
-Trisomy 8 – Not Detected
-t(8;21) – Not Detected (SEE BELOW)
-Rearrangement of 11q23 – Not Detected
-t(15;17) – Not Detected
-Inv16q22 – Not Detected
-Del 20q12 – DETECTED`;
-
-const cyto=`45~47,XY,t(3;19)(p21;q13.3),del(5)(q13q33),-20,add(21)(p11.2),add(22)(q22),+mar1[cp12]/
-45~48,idem,+3,-der(3)t(3;19)(p22;q13.3),+mar2[cp7]/46,XY[1]`;
 
 let failures=[];
-const ok=(c,m)=>{if(!c)failures.push(m)};
-let b=extractBlastData(pathology,flow);
-let p=extractPBBlastData(pathology);
-let a=extractAspirateAdequacy(pathology);
-let fp=flowparse(flow);
-let fi=fishparse(fish);
-let co=cytogeneticObservations(cyto);
-let hits=structuredCytoHits(co,fi);
-let m5=normalizeAMLAbnormality('Del 5q');
-let m5b=normalizeAMLAbnormality('Deletion of 5q');
-let k5=normalizeAMLAbnormality('del(5)(q13q33)');
+const ok=(x,msg)=>{if(!x)failures.push(msg)};
 
-ok(b.aspirate===3.5,'aspirate 3.5');
-ok(b.flow===30,'flow 30');
-ok(b.ihcLow===20&&b.ihcHigh===25,'IHC 20-25');
-ok(p.status==='Present'&&p.pct===2,'PB blasts should be Present 2%');
-ok(a==='Hemodilute + aspicular','aspirate adequacy');
-ok(fp.find(x=>x.marker==='CD34')?.modifier==='','CD34 modifier');
-ok(fp.find(x=>x.marker==='CD38')?.modifier==='dim','CD38 dim');
-ok(fp.find(x=>x.marker==='CD4')?.result==='Equivocal','CD4 equivocal');
-ok(fi.some(x=>x.target==='t(8;21)'&&x.result==='Negative'),'t821 negative retained');
-ok(!hits.includes('t(8;21)'),'negative t821 not positive hit');
-ok(co.some(x=>x.abnormality==='+mar1'),'+mar1 preserved');
-ok(co.some(x=>x.abnormality==='+mar2'),'+mar2 preserved');
-ok(co.some(x=>x.abnormality.startsWith('-der(3)')),'-der(3) preserved');
-ok(m5.canonical===m5b.canonical&&m5.concept===m5b.concept,'FISH del5q wording normalization');
-ok(k5.concept==='chr5/5q loss','karyotype del5q normalization');
-ok(fi.filter(x=>x.result==='Positive'&&x.concept==='chr5/5q loss').length===1,'positive del5q no duplicate');
-ok(fi.some(x=>x.result==='Positive'&&x.canonical==='RUNX1 copy gain'),'RUNX1 copy gain normalized');
-console.log(JSON.stringify({failures,b,p,a,fish:fi,cyto:co},null,2));
+// ---------- chronology ----------
+let D={cycles:[
+ {id:'late',start:'2024-03-01',n:1},
+ {id:'early',start:'2024-01-01',n:2},
+ {id:'mid',start:'2024-02-01',n:3},
+ {id:'unscheduled',start:'',n:4}
+],marrows:[
+ {id:'b',date:'2024-03-10'},
+ {id:'a',date:'2024-01-10'},
+ {id:'c',date:'2024-02-10'}
+],base:{marker_overrides:{}},cbc:[],out:{}};
+chronologySort();
+ok(D.cycles.map(x=>x.id).join(',')==='early,mid,late,unscheduled','cycles sort chronologically');
+ok(D.cycles.slice(0,3).map(x=>x.n).join(',')==='1,2,3','cycle numbers derive from chronology');
+ok(D.cycles[3].n===null,'unscheduled cycle is not assigned chronological number');
+ok(D.marrows.map(x=>x.id).join(',')==='a,c,b','BMBx sort chronologically');
+
+// ---------- blast hierarchy ----------
+let adequate={preferredBlastManual:null,blastAspirate:6,aspirateAdequacy:'Adequate',blastFlow:3,flowAdequate:true,blastIhcLow:4,blastIhcHigh:4};
+let limited={preferredBlastManual:null,blastAspirate:2,aspirateAdequacy:'Hemodilute + aspicular',blastFlow:7,flowAdequate:true,blastIhcLow:8,blastIhcHigh:8};
+ok(preferredBlast(adequate).value===6 && preferredBlast(adequate).source.startsWith('Aspirate'),'adequate aspirate outranks flow');
+ok(preferredBlast(limited).value===8 && preferredBlast(limited).source==='Core/IHC','limited aspirate falls back to core/IHC');
+
+// ---------- response PR missing counts ----------
+function firstCycle(){return{start:'2024-02-01'}}
+function responseWindow(m){return{fa:null,fp:null,mode:'final'}}
+D.marrows=[
+ {id:'dx',diagnostic:true,date:'2024-01-01',preferredBlastManual:null,blastAspirate:30,aspirateAdequacy:'Adequate'},
+ {id:'r',diagnostic:false,date:'2024-03-01',preferredBlastManual:null,blastAspirate:10,aspirateAdequacy:'Adequate',pb:'Absent',emd:'Absent/resolved'}
+];
+ok(classifyResponse(D.marrows[1])==='Pending count recovery data','PR-eligible marrow with missing counts remains pending');
+
+// ---------- ELN ----------
+function splitTopLevel(s){let out=[],buf='',depth=0;for(let ch of String(s||'')){if(ch==='(')depth++;if(ch===')')depth=Math.max(0,depth-1);if(ch===','&&depth===0){out.push(buf);buf=''}else buf+=ch}if(buf)out.push(buf);return out}
+function deriveCytogenetics(m){if(!m)return{category:'Pending',evidence:''};if(m.cytoCategoryOverride)return{category:m.cytoCategoryOverride,evidence:'override'};return{category:'Unknown',evidence:''}}
+D.base={marker_overrides:{},phma:'No'};
+let npm1itd={diagnostic:true,mutations:[
+ {gene:'NPM1',result:'Positive',classification:'Reported',raw_description:'NPM1 mutation'},
+ {gene:'FLT3',result:'Positive',classification:'Reported',raw_description:'FLT3-ITD detected'}
+],fishObservations:[],cytoObservations:[],raw:{ngspos:'FLT3-ITD detected',ngstest:'',cyto:'',fish:''}};
+D.marrows=[npm1itd];
+ok(eln()[0]==='Intermediate','ELN 2022 NPM1 + FLT3-ITD = Intermediate');
+
+let npm1neg=JSON.parse(JSON.stringify(npm1itd));
+npm1neg.mutations=npm1neg.mutations.filter(x=>x.gene!=='FLT3');
+npm1neg.raw.ngspos='NPM1 mutation';npm1neg.raw.ngstest='FLT3-ITD not detected';
+D.marrows=[npm1neg];
+ok(eln()[0]==='Favorable','ELN 2022 NPM1 + explicit FLT3-ITD negative = Favorable');
+
+let complex=JSON.parse(JSON.stringify(npm1neg));complex.cytoCategoryOverride='Complex karyotype';
+D.marrows=[complex];
+ok(eln()[0]==='Adverse','ELN 2022 adverse cytogenetics override NPM1 favorable');
+
+let tp53={diagnostic:true,mutations:[
+ {gene:'TP53',result:'Positive',classification:'Reported',vaf:35,raw_description:'TP53 pathogenic 35%'},
+ {gene:'NRAS',result:'Negative',classification:'Not detected'},
+ {gene:'KRAS',result:'Negative',classification:'Not detected'}
+],fishObservations:[],cytoObservations:[],raw:{ngspos:'TP53 pathogenic 35%',ngstest:'FLT3-ITD not detected',cyto:'',fish:''}};
+D.marrows=[tp53];
+ok(eln()[0]==='Adverse','ELN 2022 TP53 VAF >=10 = Adverse');
+ok(eln()[2]==='Adverse','ELN 2024 LI TP53 = Adverse');
+
+D.base.phma='Yes';
+ok(eln()[2]==='Not applicable','ELN 2024 LI is not applicable after prior HMA');
+
+console.log(JSON.stringify({failures},null,2));
 if(failures.length)process.exit(2);
