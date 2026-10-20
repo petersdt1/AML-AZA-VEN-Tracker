@@ -1,34 +1,31 @@
-# V4.0 Regression Checklist
+# V4.1 Regression Checklist
+
+## Reset / CBC
+- Clear Current Patient Data removes current and fallback local-storage keys.
+- Delete All CBC Observations affects only CBC Trend and requires confirmation.
 
 ## Smart Import
-- Mixed paste stages Treatment Cycle, BMBx, Ancillary, and CBC records independently.
-- Each proposed record can be selected/deselected.
-- Each domain can be accepted independently.
-- Accepted cycles are renumbered by chronology, not source cycle label.
-- Embedded CBC data enter the CBC timeline independently.
-- Legacy segmented marrow-import UI is absent.
-
-## Ancillary Studies
-- Manual add/edit/delete works.
-- PB/CSF/pleural/other specimen types are retained.
-- Ancillary events appear on Timeline/QA.
-- Positive CSF study with CNS status Unknown creates an adjudication warning.
-- CNS involvement status/date/basis persist.
-- Ancillary CSV exports.
+- Labels read Date (optional), Source (optional), Diagnostic BMBx.
+- Four-domain staging still works.
+- Partial acceptance preserves remaining staged records.
+- Duplicate cycle/BMBx/ancillary/CBC acceptance prompts UPDATE / ADD / CANCEL.
 
 ## BMBx
-- Calculated response remains visible when inputs are available.
-- CR/CRh/CRi use subtle green; MLFS softer green; PR amber; No response red; pending amber; baseline/pretreatment blue.
-- Best ANC and platelet selectors remain independent.
-- ANC and platelets may come from different dates inside the response window.
-- G-CSF and platelet-transfusion context is visible.
-- Redundant pretreatment information block removed.
-- Redundant BMBx assessment-details block removed.
-- BMBx Data Details contains Blast Enumeration, Blast Immunophenotype, NGS, Conventional Cytogenetics, and FISH.
-- Each BMBx data subsection has an Edit button.
+- Each BMBx Data Details tile always shows its concise overview.
+- Edit opens only that domain editor in place.
+- Show raw data is independently expandable per domain.
 - Full Edit BMBx remains available.
+- Needs review and provenance are visible.
+- Response CBC recovery and response color coding remain intact.
+
+## Ancillary Studies
+- Date → Specimen → Assay.
+- Assay-specific structured forms for Flow, NGS, FISH, Cytogenetics, Molecular MRD / PCR.
+- Molecular target dropdown includes NPM1, RUNX1::RUNX1T1, CBFB::MYH11, PML::RARA, FLT3-ITD, FLT3-TKD, BCR::ABL1, KMT2A::MLLT3, DEK::NUP214, IDH1, IDH2, WT1, Other.
+- Raw source remains available.
+- Positive CSF prompts CNS review.
+- Positive pleural/ascitic/other-fluid study prompts possible EMD review.
 
 ## Timeline
-- Treatment cycles have subtle blue/lavender coding.
-- BMBx events have subtle teal/green coding.
-- Ancillary studies have subtle amber coding.
+- Existing domain color coding retained.
+- No extra tiny text label added.

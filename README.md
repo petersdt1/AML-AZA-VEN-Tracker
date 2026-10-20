@@ -1,32 +1,21 @@
-# AML AZA/VEN Tracker V4.0
+# AML AZA/VEN Tracker V4.1
 
-V4.0 is the Smart Import + longitudinal-domain redesign.
+V4.1 is a workflow and editing refinement of V4.0.
 
 ## Major changes
-- Legacy segmented marrow-import UI removed.
-- Smart Import is now the single staging front door for heterogeneous pasted source text.
-- One paste can propose records in four independently reviewable domains:
-  - Treatment Cycles
-  - Bone Marrow (BMBx)
-  - Ancillary Studies
-  - CBC Trend
-- Each domain can be edited, selected/deselected, and accepted independently.
-- Embedded CBC observations can be staged separately from a BMBx or note.
-- Treatment-cycle statements can create proposed cycle records while preserving the source cycle label separately from chronology-derived cycle numbering.
-- New Ancillary Studies tab for peripheral blood, CSF, pleural fluid, and other non-marrow studies.
-- Positive CSF studies prompt CNS-involvement adjudication rather than automatically assigning CNS disease.
-- Ancillary studies appear on the longitudinal timeline and export separately.
-- BMBx cards cleaned up:
-  - larger summary header
-  - subtle response color coding
-  - redundant pretreatment/assessment-detail blocks removed
-  - Response CBC Recovery shown directly below PB blasts/EMD/readiness
-  - separate Best ANC Response and Best Platelet Response selectors
-  - G-CSF and platelet-transfusion 7-day context
-  - consolidated BMBx Data Details
-  - per-domain Edit buttons for Blast Enumeration, Flow, NGS, Cytogenetics, and FISH
-- Treatment Cycles, BMBx, and Ancillary Studies use subtle distinct domain colors that carry into the timeline.
-
-The deterministic ELN 2022 / ELN 2024 LI and response engines remain downstream of extraction.
+- Smart Import labels simplified to Date (optional), Source (optional), and Diagnostic BMBx.
+- True in-place BMBx domain editing for Blast Enumeration, Blast Immunophenotype, NGS, Conventional Cytogenetics, and FISH.
+- Every BMBx detail tile keeps its concise overview while editing.
+- Every BMBx detail tile has an independent Show raw data section.
+- Tile-level provenance and Needs review badges.
+- Full Edit BMBx remains available.
+- Ancillary Studies now uses Date → Specimen → Assay with dynamic assay-specific forms.
+- Flow, NGS, FISH, Cytogenetics, and Molecular MRD / PCR use structured editors.
+- Molecular targets include NPM1, RUNX1::RUNX1T1, CBFB::MYH11, PML::RARA, FLT3-ITD, FLT3-TKD, BCR::ABL1, KMT2A::MLLT3, DEK::NUP214, IDH1, IDH2, WT1, and Other.
+- Positive CSF studies prompt CNS adjudication; positive non-CSF fluid studies prompt possible EMD review.
+- Smart Import duplicate detection offers UPDATE / ADD / CANCEL for likely duplicate cycles, BMBx, ancillary studies, and CBC observations.
+- CBC Trend has Delete All CBC Observations at the bottom.
+- Clear Current Patient Data now clears current and fallback storage keys, fixing the previous reset failure.
+- Existing timeline/domain color coding is preserved without adding an extra tiny text label.
 
 De-identified prototype only. Do not use public/static hosting for PHI.

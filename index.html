@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AML AZA/VEN Tracker V4.0</title>
+<title>AML AZA/VEN Tracker V4.1</title>
 <style>
 :root{
   --bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#667085;--line:#dde3ec;
@@ -85,10 +85,21 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 .smart-record input[type=checkbox]{width:auto;margin-top:4px}
 .anc-card summary{font-size:14px}
 
+
+.inline-domain-editor{margin-top:9px;padding:11px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.inline-domain-editor .row{margin-top:7px}
+.inline-domain-editor .actions{margin-top:10px}
+.detail-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.raw-panel{margin-top:8px}
+.provenance{font-size:11px;color:#7a8494;margin-top:7px}
+.review-badge{margin-left:6px}
+.anc-assay-editor{margin-top:10px;border:1px solid var(--line);border-radius:9px;padding:11px;background:#fbfcfe}
+.molecular-target-other{margin-top:8px}
+
 </style>
 </head>
 <body>
-<header><h1>AML AZA/VEN Longitudinal Tracker V4.0</h1><div class="sub" id="hdr">No patient selected</div></header>
+<header><h1>AML AZA/VEN Longitudinal Tracker V4.1</h1><div class="sub" id="hdr">No patient selected</div></header>
 <div class="demo"><b>DEMO / FAKE DATA ONLY.</b> Static GitHub prototype. Do not enter names, MRNs, DOBs, or PHI.</div>
 <div class="wrap"><div class="layout">
 <nav>
@@ -114,7 +125,7 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 <div class="card source" id="smartImportCard">
 <h3>✦ Smart Import</h3>
 <p class="help">Paste heterogeneous clinical source text once. The extraction layer may propose Treatment Cycles, BMBx records, Ancillary Studies, and CBC observations from the same paste. Nothing is committed until each proposed domain is reviewed and accepted.</p>
-<div class="row"><div><label>Optional date hint</label><input type="text" id="smartDate" placeholder="MM/DD/YYYY"></div><div><label>Source hint</label><select id="smartSourceType"><option value="auto">Auto / mixed source</option><option value="bmbx">Bone marrow / pathology package</option><option value="treatment">Treatment note</option><option value="ancillary">Ancillary study</option><option value="cbc">CBC / laboratory data</option></select></div><div class="inline-check"><input type="checkbox" id="smartDiagnostic"><label for="smartDiagnostic" style="margin:0">Diagnostic BMBx hint</label></div></div>
+<div class="row"><div><label>Date (optional)</label><input type="text" id="smartDate" placeholder="MM/DD/YYYY"></div><div><label>Source (optional)</label><select id="smartSourceType"><option value="auto">Auto / mixed source</option><option value="bmbx">Bone marrow / pathology package</option><option value="treatment">Treatment note</option><option value="ancillary">Ancillary study</option><option value="cbc">CBC / laboratory data</option></select></div><div class="inline-check"><input type="checkbox" id="smartDiagnostic"><label for="smartDiagnostic" style="margin:0">Diagnostic BMBx</label></div></div>
 <label>Unified source text</label>
 <textarea id="smartSource" class="big" style="min-height:300px" placeholder="Paste one report, note, or a mixed block here. A single paste may create multiple proposed records across domains."></textarea>
 <div class="mutedbox" style="margin-top:10px"><div class="row two"><div><label>Institution AI extraction endpoint (optional)</label><input id="smartEndpoint" placeholder="https://approved-endpoint/...  (URL only; never paste an API key)"></div><div class="small" style="padding-top:28px">For real PHI, use only an institution-approved authenticated endpoint. Without one, V4 uses conservative local extraction so the staged workflow can still be tested.</div></div><div class="tools"><button class="btn alt" onclick="saveSmartEndpoint()">Save endpoint URL</button></div></div>
@@ -258,10 +269,18 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 </div>
 <div class="card" id="ancillaryEditor" style="display:none">
 <h3 id="ancillaryEditorTitle">Add Ancillary Study</h3>
-<div class="row"><div><label>Date</label><input id="aeDate" type="text" placeholder="MM/DD/YYYY"></div><div><label>Specimen</label><select id="aeSpecimen"><option>Peripheral blood</option><option>CSF</option><option>Pleural fluid</option><option>Ascites</option><option>Other fluid</option><option>Other</option><option>Unknown</option></select></div><div><label>Assay</label><select id="aeAssay"><option>Flow cytometry</option><option>NGS</option><option>FISH</option><option>PCR/qPCR</option><option>BCR::ABL1 PCR</option><option>NPM1 qPCR</option><option>FLT3 PCR/qPCR</option><option>Cytogenetics</option><option>Other molecular MRD</option><option>Other</option></select></div></div>
-<div class="row"><div><label>Result status</label><select id="aeStatus"><option>Unknown</option><option>Negative</option><option>Positive</option><option>Indeterminate</option><option>Detected</option><option>Not detected</option></select></div><div><label>Target / abnormal population</label><input id="aeTarget" placeholder="e.g. NPM1; abnormal myeloblast population"></div><div><label>Quantitative value</label><input id="aeValue" placeholder="e.g. 0.042"></div></div>
-<div class="row two"><div><label>Units</label><input id="aeUnits" placeholder="%, copies/10,000 ABL1, ratio, etc."></div><div><label>Assay LOD / sensitivity (optional)</label><input id="aeLOD" placeholder="e.g. 0.01%"></div></div>
-<label>Structured summary / phenotype</label><textarea id="aeSummary" class="notes" placeholder="Flow phenotype, molecular result, or concise structured summary"></textarea>
+<div class="row">
+  <div><label>Date</label><input id="aeDate" type="text" placeholder="MM/DD/YYYY"></div>
+  <div><label>Specimen</label><select id="aeSpecimen">
+    <option>Peripheral blood</option><option>CSF</option><option>Pleural fluid</option><option>Ascites</option>
+    <option>Other fluid</option><option>Other</option><option>Unknown</option>
+  </select></div>
+  <div><label>Assay</label><select id="aeAssay" onchange="renderAncillaryAssayFields()">
+    <option>Flow cytometry</option><option>NGS</option><option>FISH</option><option>Cytogenetics</option>
+    <option>Molecular MRD / PCR</option><option>Other</option>
+  </select></div>
+</div>
+<div id="ancillaryAssayFields"></div>
 <label>Raw source text</label><textarea id="aeRaw" class="big"></textarea>
 <label>Notes / adjudication</label><textarea id="aeNotes" class="notes"></textarea>
 <div class="actions"><button class="btn" onclick="saveAncillaryEditor()">Save study</button><button class="btn alt" onclick="closeAncillaryEditor()">Cancel</button></div>
@@ -272,6 +291,7 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 <section id="cbc">
 <div class="card source"><h2>CBC Trend</h2><textarea id="cbcpaste" class="big" placeholder="Paste Epic CBC trend"></textarea><div class="tools"><button class="btn" onclick="parseCBC('cbcpaste')">Extract CBC data</button><button class="btn alt" onclick="fakeCBC('cbcpaste')">Load fake example</button><button class="btn alt" onclick="manualCBC()">+ Add CBC manually</button></div></div>
 <div class="card"><h3>Confirmed observations</h3><div id="cbctable"></div></div>
+<div class="card" style="margin-top:12px"><div class="actions" style="justify-content:flex-end"><button class="btn danger" onclick="deleteAllCBC()">Delete All CBC Observations</button></div></div>
 </section>
 
 <section id="out">
@@ -288,15 +308,15 @@ details{margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:
 
 <section id="export">
 <div class="card"><h2>Export</h2><p class="help">Demo data are stored only in this browser. Export provides portable JSON and relational CSV tables.</p>
-<div class="tools"><button class="btn" onclick="jsonOut()">Full JSON</button><button class="btn alt" onclick="csvOut('cycles')">Cycles CSV</button><button class="btn alt" onclick="csvOut('marrows')">Marrows CSV</button><button class="btn alt" onclick="csvOut('cbc')">CBC CSV</button><button class="btn alt" onclick="csvOut('ancillary')">Ancillary CSV</button><button class="btn alt" onclick="csvOut('mutations')">Mutations CSV</button><button class="btn alt" onclick="csvOut('cytogenetics')">Cytogenetics CSV</button><button class="btn alt" onclick="csvOut('fish')">FISH CSV</button><button class="btn danger" onclick="resetAll()">Reset demo</button></div>
+<div class="tools"><button class="btn" onclick="jsonOut()">Full JSON</button><button class="btn alt" onclick="csvOut('cycles')">Cycles CSV</button><button class="btn alt" onclick="csvOut('marrows')">Marrows CSV</button><button class="btn alt" onclick="csvOut('cbc')">CBC CSV</button><button class="btn alt" onclick="csvOut('ancillary')">Ancillary CSV</button><button class="btn alt" onclick="csvOut('mutations')">Mutations CSV</button><button class="btn alt" onclick="csvOut('cytogenetics')">Cytogenetics CSV</button><button class="btn alt" onclick="csvOut('fish')">FISH CSV</button><button class="btn danger" onclick="resetAll()">Clear Current Patient Data</button></div>
 </div>
 </section>
 
 </main></div></div>
 
 <script>
-const K='AML_AV_V40';
-let D=JSON.parse(localStorage.getItem(K)||localStorage.getItem('AML_AV_V32')||localStorage.getItem('AML_AV_V31')||localStorage.getItem('AML_AV_V30')||localStorage.getItem('AML_AV_V210')||'null')||{
+const K='AML_AV_V41';
+let D=JSON.parse(localStorage.getItem(K)||localStorage.getItem('AML_AV_V40')||localStorage.getItem('AML_AV_V32')||localStorage.getItem('AML_AV_V31')||localStorage.getItem('AML_AV_V30')||localStorage.getItem('AML_AV_V210')||'null')||{
   base:{cns_status:'Unknown',cns_date:'',cns_basis:''},cycles:[],marrows:[],ancillary:[],cbc:[],
   out:{relapse_date_auto:'',relapse_date_final:'',relapse_basis:'',relapse_overridden:false},
   audit:[]
@@ -972,20 +992,37 @@ function smartEditAncillary(i){
  for(let [k,l] of [['date','Date YYYY-MM-DD'],['specimen','Specimen'],['assay','Assay'],['status','Status'],['target','Target / abnormal population'],['value','Quantitative value'],['units','Units']]){v=prompt(l,x[k]??'');if(v===null)return;x[k]=v}
  renderSmartMultiStage()
 }
-function smartEditBmbx(i){resetMarrowEditorFocus();smartStageEditIndex=i;marrowEditorDraftBase=cloneObj(smartMultiStage.bmbx[i]);openMarrowEditor(null,marrowEditorDraftBase)}
+function smartEditBmbx(i){smartStageEditIndex=i;marrowEditorDraftBase=cloneObj(smartMultiStage.bmbx[i]);openMarrowEditor(null,marrowEditorDraftBase)}
+function duplicateDecision(domain,x){
+ let idx=-1,label='';
+ if(domain==='cycles'&&x.start){idx=D.cycles.findIndex(y=>y.start===x.start);label=`treatment cycle starting ${displayDate(x.start)}`}
+ if(domain==='bmbx'&&x.date){idx=D.marrows.findIndex(y=>y.date===x.date);label=`BMBx dated ${displayDate(x.date)}`}
+ if(domain==='ancillary'&&x.date){idx=D.ancillary.findIndex(y=>y.date===x.date&&y.specimen===x.specimen&&y.assay===x.assay);label=`${x.specimen} ${x.assay} dated ${displayDate(x.date)}`}
+ if(domain==='cbc'&&x.timestamp){idx=D.cbc.findIndex(y=>y.timestamp===x.timestamp);label=`CBC at ${x.timestamp.replace('T',' ')}`}
+ if(idx<0)return{action:'add',idx:-1};
+ let ans=prompt(`Potential duplicate detected: ${label}.\nType UPDATE to replace the existing record, ADD to keep a separate record, or CANCEL to skip this proposed record.`,'CANCEL');
+ ans=String(ans||'CANCEL').trim().toUpperCase();return{action:ans==='UPDATE'?'update':ans==='ADD'?'add':'cancel',idx}
+}
 function smartAcceptDomain(domain){
- let rows=smartMultiStage[domain].filter(x=>x._selected!==false);if(!rows.length){alert('No selected records in this domain.');return}
- if(domain==='cycles'){
-  rows.forEach(x=>{let hd=hmaDefault(x.hma||'Azacitidine'),va=x.venActual??x.venPlanned??28;D.cycles.push({id:'C'+Date.now()+Math.random().toString(36).slice(2,5),n:null,start:x.start||'',hma:x.hma||'Azacitidine',hmaPlanned:x.hmaPlanned??hd,hmaActual:x.hmaActual??hd,venStart:x.venStart||x.start||'',venPlanned:x.venPlanned??va,venActual:va,venEnd:'',gcsf:x.gcsf||'Unknown',delay:x.delay==='Yes'?'Yes':'No',delayReasons:x.delayReasons||[],venHold:'No',heldDays:0,shortenedReason:'',notes:[x.notes,x.sourceCycleLabel?'Source label: '+x.sourceCycleLabel:'',x.evidence?'Evidence: '+x.evidence:''].filter(Boolean).join(' | ')})})
- }else if(domain==='bmbx'){
-  rows.forEach(x=>{let o=cloneObj(x);delete o._selected;if(o.diagnostic)D.marrows.forEach(m=>m.diagnostic=false);D.marrows.push(o);if(o.diagnostic)syncDxFromDiagnostic(o.date)})
- }else if(domain==='ancillary'){
-  rows.forEach(x=>{let o=cloneObj(x);delete o._selected;D.ancillary.push(o)})
- }else if(domain==='cbc'){
-  let map=new Map(D.cbc.map(x=>[x.timestamp,x]));rows.forEach(x=>{let o=cloneObj(x);delete o._selected;map.set(o.timestamp,{...(map.get(o.timestamp)||{}),...o})});D.cbc=[...map.values()].sort((a,b)=>a.timestamp.localeCompare(b.timestamp))
- }
- smartMultiStage[domain]=smartMultiStage[domain].filter(x=>x._selected===false);
- chronologySort();save();renderSmartMultiStage()
+ let selected=smartMultiStage[domain].filter(x=>x._selected!==false);if(!selected.length){alert('No selected records in this domain.');return}
+ let acceptedIds=new Set();
+ selected.forEach(x=>{
+   let d=duplicateDecision(domain,x);if(d.action==='cancel')return;
+   if(domain==='cycles'){
+     let hd=hmaDefault(x.hma||'Azacitidine'),va=x.venActual??x.venPlanned??28,o={id:d.action==='update'?D.cycles[d.idx].id:'C'+Date.now()+Math.random().toString(36).slice(2,5),n:null,start:x.start||'',hma:x.hma||'Azacitidine',hmaPlanned:x.hmaPlanned??hd,hmaActual:x.hmaActual??hd,venStart:x.venStart||x.start||'',venPlanned:x.venPlanned??va,venActual:va,venEnd:'',gcsf:x.gcsf||'Unknown',delay:x.delay==='Yes'?'Yes':'No',delayReasons:x.delayReasons||[],venHold:'No',heldDays:0,shortenedReason:'',notes:[x.notes,x.sourceCycleLabel?'Source label: '+x.sourceCycleLabel:'',x.evidence?'Evidence: '+x.evidence:''].filter(Boolean).join(' | ')};
+     if(d.action==='update')D.cycles[d.idx]=o;else D.cycles.push(o)
+   }else if(domain==='bmbx'){
+     let o=cloneObj(x);delete o._selected;if(o.diagnostic)D.marrows.forEach(m=>m.diagnostic=false);
+     if(d.action==='update'){o.id=D.marrows[d.idx].id;D.marrows[d.idx]=o}else D.marrows.push(o);if(o.diagnostic)syncDxFromDiagnostic(o.date)
+   }else if(domain==='ancillary'){
+     let o=cloneObj(x);delete o._selected;if(d.action==='update'){o.id=D.ancillary[d.idx].id;D.ancillary[d.idx]=o}else D.ancillary.push(o)
+   }else if(domain==='cbc'){
+     let o=cloneObj(x);delete o._selected;if(d.action==='update')D.cbc[d.idx]=o;else D.cbc.push(o)
+   }
+   acceptedIds.add(x.id||x.timestamp)
+ });
+ smartMultiStage[domain]=smartMultiStage[domain].filter(x=>!acceptedIds.has(x.id||x.timestamp));
+ chronologySort();D.cbc.sort((a,b)=>String(a.timestamp).localeCompare(String(b.timestamp)));save();renderSmartMultiStage()
 }
 function smartAcceptAll(){['cycles','bmbx','ancillary','cbc'].forEach(d=>{if(smartMultiStage[d].some(x=>x._selected!==false))smartAcceptDomain(d)})}
 function smartDomainHTML(domain,title,colorClass,rows,renderRow){
@@ -1303,19 +1340,8 @@ function saveMarrowEditor(){
  }else D.marrows[marrowEditIndex]=o;
  chronologySort();openBmbxCards.add(o.id);closeMarrowEditor();save()
 }
-function resetMarrowEditorFocus(){
- let box=$('marrowStructuredDetails');if(box)box.querySelectorAll(':scope > details').forEach(d=>d.style.display='');
-}
-function editMarrow(i){resetMarrowEditorFocus();openMarrowEditor(i)}
-function editMarrowSection(i,domain){
- resetMarrowEditorFocus();openMarrowEditor(i);
- setTimeout(()=>{
-   let box=$('marrowStructuredDetails');if(!box)return;
-   let wanted={blast:'Blast assessment',flow:'Blast immunophenotype',ngs:'NGS',cyto:'Conventional cytogenetics',fish:'FISH'}[domain];
-   box.querySelectorAll(':scope > details').forEach(d=>{let s=d.querySelector(':scope > summary');if(!s)return;let match=s.textContent.trim().startsWith(wanted);d.style.display=match?'block':'none';if(match)d.open=true});
-   $('marrowEditorTitle').textContent='Edit '+wanted;
- },0)
-}
+function editMarrow(i){openMarrowEditor(i)}
+
 function delMarrow(i){if(confirm('Delete this marrow? The timeline, response, and relapse calculations will update automatically.')){let wasDiag=D.marrows[i]?.diagnostic;D.marrows.splice(i,1);if(wasDiag){let d=D.marrows.find(x=>x.diagnostic);D.base.dx_auto=d?.date||'';if(!D.base.dx_overridden)D.base.dx=D.base.dx_auto||''}save()}}
 function setManualCounts(i){
  let m=D.marrows[i],a=prompt('Manual ANC override (blank to clear)',m.manualAnc??''),ad=prompt('ANC date (YYYY-MM-DD; blank to clear)',m.manualAncDate||''),p=prompt('Manual platelet override (blank to clear)',m.manualPlt??''),pd=prompt('Platelet date (YYYY-MM-DD; blank to clear)',m.manualPltDate||'');
@@ -1324,6 +1350,126 @@ function setManualCounts(i){
 
 
 
+
+const inlineBmbxEditState=new Map();
+let ancillaryDraft={flow:[],mutations:[],fish:[],cyto:[],molecular:{}};
+
+function deleteAllCBC(){
+  if(!D.cbc.length){alert('There are no CBC observations to delete.');return}
+  if(confirm(`Delete all ${D.cbc.length} CBC observation(s)? This affects only the CBC Trend.`)){
+    D.cbc=[];save()
+  }
+}
+
+function bmbxRawForDomain(m,domain){
+  if(domain==='blast') return m?.raw?.path||m?.raw?.smart||'';
+  if(domain==='flow') return m?.raw?.flow||m?.raw?.smart||'';
+  if(domain==='ngs') return [m?.raw?.ngspos,m?.raw?.ngstest].filter(Boolean).join('\n\n')||m?.raw?.smart||'';
+  if(domain==='cyto') return m?.raw?.cyto||m?.raw?.smart||'';
+  if(domain==='fish') return m?.raw?.fish||m?.raw?.smart||'';
+  return ''
+}
+function domainNeedsReview(m,domain){
+  let w=(m.extractionWarnings||[]).join(' ').toLowerCase();
+  if(domain==='blast') return preferredBlast(m).value==null || /blast/.test(w);
+  if(domain==='flow') return !!m.flowPossibleUnparsed || /flow|immunophen/.test(w);
+  if(domain==='ngs') return (m.mutations||[]).some(v=>v.result==='Positive'&&!v.gene) || /ngs|molecular|variant/.test(w);
+  if(domain==='cyto') return (m.cytoObservations||[]).some(x=>!x.abnormality) || /cyto|karyotype/.test(w);
+  if(domain==='fish') return (m.fishObservations||[]).some(x=>!x.target||['Unknown',''].includes(x.result||'')) || /fish/.test(w);
+  return false
+}
+function domainReviewFooter(m,domain){
+  let reviewed=m.reviewedDomains?.[domain];
+  let src=m.extractionMethod||m.source||'manual abstraction';
+  return `Source: ${escHtml(src)} · ${reviewed?'manually reviewed':'not manually edited'}`
+}
+function toggleInlineBmbxEditor(i,domain){
+  let k=D.marrows[i]?.id+'|'+domain;
+  if(inlineBmbxEditState.get(k))inlineBmbxEditState.delete(k);else inlineBmbxEditState.set(k,true);
+  openBmbxCards.add(D.marrows[i].id);render()
+}
+function markDomainReviewed(m,domain){m.reviewedDomains=m.reviewedDomains||{};m.reviewedDomains[domain]=true}
+function inlineBlastEditor(m,i){
+ return `<div class=inline-domain-editor>
+ <div class=row><div><label>Aspirate blasts %</label><input class=ib-asp type=number step=0.1 value="${m.blastAspirate??''}"></div>
+ <div><label>Aspirate adequacy</label><select class=ib-adeq>${['Unknown','Adequate','Hemodilute / limited','Aspicular / aparticulate','Hemodilute + aspicular'].map(x=>`<option ${m.aspirateAdequacy===x?'selected':''}>${x}</option>`).join('')}</select></div>
+ <div><label>Flow blasts %</label><input class=ib-flow type=number step=0.1 value="${m.blastFlow??''}"></div></div>
+ <div class=row><div><label>Flow representative</label><select class=ib-flowad><option ${m.flowAdequate===true?'selected':''}>Yes</option><option ${m.flowAdequate===false?'selected':''}>No</option><option ${m.flowAdequate==null?'selected':''}>Unknown</option></select></div>
+ <div><label>Core/IHC low %</label><input class=ib-ihl type=number step=0.1 value="${m.blastIhcLow??''}"></div><div><label>Core/IHC high %</label><input class=ib-ihh type=number step=0.1 value="${m.blastIhcHigh??''}"></div>
+ <div><label>Preferred/adjudicated override %</label><input class=ib-pref type=number step=0.1 value="${m.preferredBlastManual??''}"></div></div>
+ <div class=actions><button class=btn onclick="saveInlineBmbx(${i},'blast',this)">Save</button><button class="btn alt" onclick="toggleInlineBmbxEditor(${i},'blast')">Cancel</button></div></div>`
+}
+function inlineFlowEditor(m,i){
+ let rows=(m.flow||[]).map(x=>`<div class="srow row" style="align-items:end;margin-bottom:6px"><div><label>Marker</label><input class=if-marker value="${escHtml(x.marker||'')}"></div><div><label>Result</label><select class=if-result>${['Positive','Negative','Equivocal','Reported'].map(v=>`<option ${x.result===v?'selected':''}>${v}</option>`).join('')}</select></div><div><label>Modifier</label><input class=if-mod value="${escHtml(x.modifier||'')}"></div><div><label>Keep</label><input class=if-keep type=checkbox style="width:auto" checked></div></div>`).join('');
+ return `<div class=inline-domain-editor><div class=inline-flow-rows>${rows||'<div class=small>No markers stored.</div>'}</div><button class="btn alt" onclick="addInlineRow(this,'flow')">+ Add marker</button><div class=actions><button class=btn onclick="saveInlineBmbx(${i},'flow',this)">Save</button><button class="btn alt" onclick="toggleInlineBmbxEditor(${i},'flow')">Cancel</button></div></div>`
+}
+function inlineNGSEditor(m,i){
+ let rows=(m.mutations||[]).filter(x=>x.result==='Positive').map(x=>`<div class="srow" style="display:grid;grid-template-columns:45px 1fr 1.25fr 1.1fr .7fr 1.15fr;gap:7px;align-items:end;margin-bottom:6px"><div><label>Keep</label><input class=in-keep type=checkbox style="width:auto" checked></div><div><label>Gene</label><input class=in-gene value="${escHtml(x.gene||'')}"></div><div><label>Protein</label><input class=in-protein value="${escHtml(x.protein||'')}"></div><div><label>cDNA</label><input class=in-cdna value="${escHtml(x.cdna||'')}"></div><div><label>VAF %</label><input class=in-vaf type=number step=.01 value="${x.vaf??''}"></div><div><label>Classification</label><select class=in-class>${['Pathogenic','Likely pathogenic','VUS','Reported'].map(v=>`<option ${x.classification===v?'selected':''}>${v}</option>`).join('')}</select></div></div>`).join('');
+ return `<div class=inline-domain-editor><div class=inline-ngs-rows>${rows||'<div class=small>No detected variants stored.</div>'}</div><button class="btn alt" onclick="addInlineRow(this,'ngs')">+ Add variant</button><div class=actions><button class=btn onclick="saveInlineBmbx(${i},'ngs',this)">Save</button><button class="btn alt" onclick="toggleInlineBmbxEditor(${i},'ngs')">Cancel</button></div></div>`
+}
+function inlineCytoEditor(m,i){
+ let rows=(m.cytoObservations||[]).map(x=>`<div class="srow row two" style="align-items:end;margin-bottom:6px"><div><label>Abnormality</label><input class=ic-abn value="${escHtml(x.abnormality||'')}"></div><div><label>Keep</label><input class=ic-keep type=checkbox style="width:auto" checked></div></div>`).join('');
+ return `<div class=inline-domain-editor><div class=inline-cyto-rows>${rows||'<div class=small>No abnormalities stored.</div>'}</div><button class="btn alt" onclick="addInlineRow(this,'cyto')">+ Add abnormality</button><div class=actions><button class=btn onclick="saveInlineBmbx(${i},'cyto',this)">Save</button><button class="btn alt" onclick="toggleInlineBmbxEditor(${i},'cyto')">Cancel</button></div></div>`
+}
+function inlineFishEditor(m,i){
+ let rows=(m.fishObservations||[]).map(x=>`<div class="srow row" style="align-items:end;margin-bottom:6px"><div><label>Probe / abnormality</label><input class=ifi-target value="${escHtml(x.target||'')}"></div><div><label>Result</label><select class=ifi-result>${['Positive','Negative','Indeterminate','Unknown'].map(v=>`<option ${x.result===v?'selected':''}>${v}</option>`).join('')}</select></div><div><label>Keep</label><input class=ifi-keep type=checkbox style="width:auto" checked></div></div>`).join('');
+ return `<div class=inline-domain-editor><div class=inline-fish-rows>${rows||'<div class=small>No FISH results stored.</div>'}</div><button class="btn alt" onclick="addInlineRow(this,'fish')">+ Add FISH result</button><div class=actions><button class=btn onclick="saveInlineBmbx(${i},'fish',this)">Save</button><button class="btn alt" onclick="toggleInlineBmbxEditor(${i},'fish')">Cancel</button></div></div>`
+}
+function inlineEditorHTML(m,i,domain){return domain==='blast'?inlineBlastEditor(m,i):domain==='flow'?inlineFlowEditor(m,i):domain==='ngs'?inlineNGSEditor(m,i):domain==='cyto'?inlineCytoEditor(m,i):domain==='fish'?inlineFishEditor(m,i):''}
+function addInlineRow(btn,domain){
+ let ed=btn.closest('.inline-domain-editor');
+ if(domain==='flow')ed.querySelector('.inline-flow-rows').insertAdjacentHTML('beforeend',`<div class="srow row" style="align-items:end;margin-bottom:6px"><div><label>Marker</label><input class=if-marker></div><div><label>Result</label><select class=if-result><option>Positive</option><option>Negative</option><option>Equivocal</option><option>Reported</option></select></div><div><label>Modifier</label><input class=if-mod></div><div><label>Keep</label><input class=if-keep type=checkbox style="width:auto" checked></div></div>`);
+ if(domain==='ngs')ed.querySelector('.inline-ngs-rows').insertAdjacentHTML('beforeend',`<div class="srow" style="display:grid;grid-template-columns:45px 1fr 1.25fr 1.1fr .7fr 1.15fr;gap:7px;align-items:end;margin-bottom:6px"><div><label>Keep</label><input class=in-keep type=checkbox style="width:auto" checked></div><div><label>Gene</label><input class=in-gene></div><div><label>Protein</label><input class=in-protein></div><div><label>cDNA</label><input class=in-cdna></div><div><label>VAF %</label><input class=in-vaf type=number step=.01></div><div><label>Classification</label><select class=in-class><option>Pathogenic</option><option>Likely pathogenic</option><option>VUS</option><option>Reported</option></select></div></div>`);
+ if(domain==='cyto')ed.querySelector('.inline-cyto-rows').insertAdjacentHTML('beforeend',`<div class="srow row two" style="align-items:end;margin-bottom:6px"><div><label>Abnormality</label><input class=ic-abn></div><div><label>Keep</label><input class=ic-keep type=checkbox style="width:auto" checked></div></div>`);
+ if(domain==='fish')ed.querySelector('.inline-fish-rows').insertAdjacentHTML('beforeend',`<div class="srow row" style="align-items:end;margin-bottom:6px"><div><label>Probe / abnormality</label><input class=ifi-target></div><div><label>Result</label><select class=ifi-result><option>Positive</option><option>Negative</option><option>Indeterminate</option><option>Unknown</option></select></div><div><label>Keep</label><input class=ifi-keep type=checkbox style="width:auto" checked></div></div>`)
+}
+function saveInlineBmbx(i,domain,btn){
+ let m=D.marrows[i],ed=btn.closest('.inline-domain-editor');
+ if(domain==='blast'){
+   let num=c=>{let v=ed.querySelector(c).value;return v===''?null:Number(v)};
+   m.blastAspirate=num('.ib-asp');m.aspirateAdequacy=ed.querySelector('.ib-adeq').value;m.blastFlow=num('.ib-flow');
+   let fa=ed.querySelector('.ib-flowad').value;m.flowAdequate=fa==='Yes'?true:fa==='No'?false:null;
+   m.blastIhcLow=num('.ib-ihl');m.blastIhcHigh=num('.ib-ihh');m.preferredBlastManual=num('.ib-pref')
+ }
+ if(domain==='flow')m.flow=[...ed.querySelectorAll('.srow')].filter(r=>r.querySelector('.if-keep')?.checked).map(r=>({marker:r.querySelector('.if-marker').value.trim(),result:r.querySelector('.if-result').value,modifier:r.querySelector('.if-mod').value.trim(),source:'manual structured review'})).filter(x=>x.marker);
+ if(domain==='ngs'){let neg=(m.mutations||[]).filter(x=>x.result==='Negative');let pos=[...ed.querySelectorAll('.srow')].filter(r=>r.querySelector('.in-keep')?.checked).map(r=>({gene:r.querySelector('.in-gene').value.trim().toUpperCase(),protein:r.querySelector('.in-protein').value.trim(),cdna:r.querySelector('.in-cdna').value.trim(),vaf:r.querySelector('.in-vaf').value===''?null:Number(r.querySelector('.in-vaf').value),classification:r.querySelector('.in-class').value,result:'Positive',source:'manual structured review'})).filter(x=>x.gene);m.mutations=[...pos,...neg]}
+ if(domain==='cyto'){m.cytoObservations=[...ed.querySelectorAll('.srow')].filter(r=>r.querySelector('.ic-keep')?.checked).map(r=>({abnormality:r.querySelector('.ic-abn').value.trim(),result:'Present',source:'Conventional cytogenetics'})).filter(x=>x.abnormality);m.cytoHits=structuredCytoHits(m.cytoObservations,m.fishObservations||[])}
+ if(domain==='fish'){m.fishObservations=[...ed.querySelectorAll('.srow')].filter(r=>r.querySelector('.ifi-keep')?.checked).map(r=>({target:r.querySelector('.ifi-target').value.trim(),result:r.querySelector('.ifi-result').value,raw_description:''})).filter(x=>x.target);m.cytoHits=structuredCytoHits(m.cytoObservations||[],m.fishObservations)}
+ m.normalizedFindings=normalizedPositiveFindings(m);markDomainReviewed(m,domain);inlineBmbxEditState.delete(m.id+'|'+domain);openBmbxCards.add(m.id);save()
+}
+
+function ancillaryAssayKey(a){if(a==='Flow cytometry')return'flow';if(a==='NGS')return'ngs';if(a==='FISH')return'fish';if(a==='Cytogenetics')return'cyto';if(a==='Molecular MRD / PCR')return'molecular';return'other'}
+function molecularTargetOptions(sel=''){
+ let vals=['NPM1','RUNX1::RUNX1T1','CBFB::MYH11','PML::RARA','FLT3-ITD','FLT3-TKD','BCR::ABL1','KMT2A::MLLT3','DEK::NUP214','IDH1','IDH2','WT1','Other'];
+ return vals.map(v=>`<option ${sel===v?'selected':''}>${v}</option>`).join('')
+}
+function renderAncillaryAssayFields(){
+ let box=$('ancillaryAssayFields');if(!box)return;let assay=$('aeAssay').value,k=ancillaryAssayKey(assay),d=ancillaryDraft;
+ if(k==='flow')box.innerHTML=`<div class=anc-assay-editor><h4>Flow cytometry structured data</h4><div class=row two><div><label>Result status</label><select id=afStatus>${['Unknown','Negative','Positive','Indeterminate'].map(x=>`<option ${d.status===x?'selected':''}>${x}</option>`).join('')}</select></div><div><label>Abnormal population %</label><input id=afPct type=number step=.01 value="${d.value??''}"></div></div><div id=afRows>${(d.flow||[]).map(x=>`<div class="srow row"><div><label>Marker</label><input class=af-marker value="${escHtml(x.marker||'')}"></div><div><label>Result</label><select class=af-result>${['Positive','Negative','Equivocal','Reported'].map(v=>`<option ${x.result===v?'selected':''}>${v}</option>`).join('')}</select></div><div><label>Modifier</label><input class=af-mod value="${escHtml(x.modifier||'')}"></div></div>`).join('')}</div><button class="btn alt" onclick="addAncillaryAssayRow('flow')">+ Add marker</button></div>`;
+ else if(k==='ngs')box.innerHTML=`<div class=anc-assay-editor><h4>NGS structured data</h4><div id=anRows>${(d.mutations||[]).map(x=>`<div class="srow" style="display:grid;grid-template-columns:1fr 1.2fr 1.1fr .7fr 1.1fr;gap:7px;margin-bottom:6px"><div><label>Gene</label><input class=an-gene value="${escHtml(x.gene||'')}"></div><div><label>Protein</label><input class=an-protein value="${escHtml(x.protein||'')}"></div><div><label>cDNA</label><input class=an-cdna value="${escHtml(x.cdna||'')}"></div><div><label>VAF %</label><input class=an-vaf type=number step=.01 value="${x.vaf??''}"></div><div><label>Classification</label><select class=an-class>${['Pathogenic','Likely pathogenic','VUS','Reported'].map(v=>`<option ${x.classification===v?'selected':''}>${v}</option>`).join('')}</select></div></div>`).join('')}</div><button class="btn alt" onclick="addAncillaryAssayRow('ngs')">+ Add variant</button></div>`;
+ else if(k==='fish')box.innerHTML=`<div class=anc-assay-editor><h4>FISH structured data</h4><div id=afiRows>${(d.fish||[]).map(x=>`<div class="srow row"><div><label>Probe / abnormality</label><input class=afi-target value="${escHtml(x.target||'')}"></div><div><label>Result</label><select class=afi-result>${['Positive','Negative','Indeterminate','Unknown'].map(v=>`<option ${x.result===v?'selected':''}>${v}</option>`).join('')}</select></div></div>`).join('')}</div><button class="btn alt" onclick="addAncillaryAssayRow('fish')">+ Add FISH result</button></div>`;
+ else if(k==='cyto')box.innerHTML=`<div class=anc-assay-editor><h4>Conventional cytogenetics structured data</h4><div><label>Raw karyotype / interpretation</label><textarea id=acKaryo class=notes>${escHtml(d.karyotype||'')}</textarea></div><div id=acRows>${(d.cyto||[]).map(x=>`<div class="srow"><label>Abnormality</label><input class=ac-abn value="${escHtml(x.abnormality||'')}"></div>`).join('')}</div><button class="btn alt" onclick="addAncillaryAssayRow('cyto')">+ Add abnormality</button></div>`;
+ else if(k==='molecular'){let m=d.molecular||{};box.innerHTML=`<div class=anc-assay-editor><h4>Molecular monitoring / MRD</h4><div class=row><div><label>Molecular target</label><select id=amTarget onchange="toggleAncillaryOtherTarget()">${molecularTargetOptions(m.target||'NPM1')}</select><div id=amOtherWrap class=molecular-target-other style="${m.target==='Other'?'':'display:none'}"><label>Other target</label><input id=amOtherTarget value="${escHtml(m.otherTarget||'')}"></div></div><div><label>Method</label><select id=amMethod>${['qPCR','dPCR','PCR','NGS MRD','Other'].map(v=>`<option ${m.method===v?'selected':''}>${v}</option>`).join('')}</select></div><div><label>Result</label><select id=amStatus>${['Unknown','Negative','Positive','Indeterminate','Detected','Not detected'].map(v=>`<option ${m.status===v?'selected':''}>${v}</option>`).join('')}</select></div></div><div class=row><div><label>Quantitative value</label><input id=amValue value="${escHtml(m.value??'')}"></div><div><label>Units</label><input id=amUnits placeholder="%, copies/10,000 ABL1, ratio, etc." value="${escHtml(m.units||'')}"></div><div><label>LOD / sensitivity</label><input id=amLOD value="${escHtml(m.lod||'')}"></div></div></div>`}
+ else box.innerHTML=`<div class=anc-assay-editor><div class=row><div><label>Result status</label><select id=aoStatus>${['Unknown','Negative','Positive','Indeterminate','Detected','Not detected'].map(v=>`<option ${d.status===v?'selected':''}>${v}</option>`).join('')}</select></div><div><label>Target / finding</label><input id=aoTarget value="${escHtml(d.target||'')}"></div></div><label>Structured summary</label><textarea id=aoSummary class=notes>${escHtml(d.summary||'')}</textarea></div>`
+}
+function addAncillaryAssayRow(kind){
+ if(kind==='flow')$('afRows').insertAdjacentHTML('beforeend',`<div class="srow row"><div><label>Marker</label><input class=af-marker></div><div><label>Result</label><select class=af-result><option>Positive</option><option>Negative</option><option>Equivocal</option><option>Reported</option></select></div><div><label>Modifier</label><input class=af-mod></div></div>`);
+ if(kind==='ngs')$('anRows').insertAdjacentHTML('beforeend',`<div class="srow" style="display:grid;grid-template-columns:1fr 1.2fr 1.1fr .7fr 1.1fr;gap:7px;margin-bottom:6px"><div><label>Gene</label><input class=an-gene></div><div><label>Protein</label><input class=an-protein></div><div><label>cDNA</label><input class=an-cdna></div><div><label>VAF %</label><input class=an-vaf type=number step=.01></div><div><label>Classification</label><select class=an-class><option>Pathogenic</option><option>Likely pathogenic</option><option>VUS</option><option>Reported</option></select></div></div>`);
+ if(kind==='fish')$('afiRows').insertAdjacentHTML('beforeend',`<div class="srow row"><div><label>Probe / abnormality</label><input class=afi-target></div><div><label>Result</label><select class=afi-result><option>Positive</option><option>Negative</option><option>Indeterminate</option><option>Unknown</option></select></div></div>`);
+ if(kind==='cyto')$('acRows').insertAdjacentHTML('beforeend',`<div class=srow><label>Abnormality</label><input class=ac-abn></div>`)
+}
+function toggleAncillaryOtherTarget(){let w=$('amOtherWrap');if(w)w.style.display=$('amTarget').value==='Other'?'block':'none'}
+function collectAncillaryAssayData(){
+ let assay=$('aeAssay').value,k=ancillaryAssayKey(assay),o={assay};
+ if(k==='flow'){o.status=$('afStatus').value;o.value=$('afPct').value;o.units='%';o.flow=[...document.querySelectorAll('#afRows .srow')].map(r=>({marker:r.querySelector('.af-marker').value.trim(),result:r.querySelector('.af-result').value,modifier:r.querySelector('.af-mod').value.trim()})).filter(x=>x.marker);o.summary=o.flow.map(flowDisplay).join(' · ')}
+ else if(k==='ngs'){o.status='Unknown';o.mutations=[...document.querySelectorAll('#anRows .srow')].map(r=>({gene:r.querySelector('.an-gene').value.trim().toUpperCase(),protein:r.querySelector('.an-protein').value.trim(),cdna:r.querySelector('.an-cdna').value.trim(),vaf:r.querySelector('.an-vaf').value===''?null:Number(r.querySelector('.an-vaf').value),classification:r.querySelector('.an-class').value,result:'Positive'})).filter(x=>x.gene);o.summary=o.mutations.map(variantDisplay).join(' · ')}
+ else if(k==='fish'){o.status='Unknown';o.fishObservations=[...document.querySelectorAll('#afiRows .srow')].map(r=>({target:r.querySelector('.afi-target').value.trim(),result:r.querySelector('.afi-result').value})).filter(x=>x.target);o.summary=o.fishObservations.map(x=>`${x.target} ${x.result}`).join(' · ')}
+ else if(k==='cyto'){o.status='Unknown';o.karyotype=$('acKaryo').value;o.cytoObservations=[...document.querySelectorAll('#acRows .srow')].map(r=>({abnormality:r.querySelector('.ac-abn').value.trim(),result:'Present',source:'Conventional cytogenetics'})).filter(x=>x.abnormality);o.summary=[o.karyotype,...o.cytoObservations.map(x=>x.abnormality)].filter(Boolean).join(' · ')}
+ else if(k==='molecular'){let target=$('amTarget').value,other=$('amOtherTarget')?.value.trim()||'';o.molecular={target,otherTarget:other,method:$('amMethod').value,status:$('amStatus').value,value:$('amValue').value,units:$('amUnits').value,lod:$('amLOD').value};o.target=target==='Other'?other:target;o.status=o.molecular.status;o.value=o.molecular.value;o.units=o.molecular.units;o.lod=o.molecular.lod;o.summary=[o.target,o.molecular.method,o.status,o.value!==''?o.value+(o.units?' '+o.units:''):''].filter(Boolean).join(' · ')}
+ else{o.status=$('aoStatus').value;o.target=$('aoTarget').value;o.summary=$('aoSummary').value}
+ return o
+}
+
 const openAncillaryCards=new Set();let ancillaryEditIndex=null;
 function toggleAllAncillary(open){openAncillaryCards.clear();if(open)D.ancillary.forEach(x=>openAncillaryCards.add(x.id));render()}
 function saveCNS(){
@@ -1331,40 +1477,27 @@ function saveCNS(){
  D.base.cns_basis=$('cnsBasis').value||'';save()
 }
 function openAncillaryEditor(i=null,draft=null){
- ancillaryEditIndex=i;let x=draft|| (i===null?null:D.ancillary[i]);
+ ancillaryEditIndex=i;let x=draft||(i===null?null:D.ancillary[i]);
+ ancillaryDraft={flow:cloneObj(x?.flow||[]),mutations:cloneObj(x?.mutations||[]),fish:cloneObj(x?.fishObservations||[]),cyto:cloneObj(x?.cytoObservations||[]),molecular:cloneObj(x?.molecular||{}),status:x?.status||'Unknown',target:x?.target||'',value:x?.value??'',summary:x?.summary||'',karyotype:x?.karyotype||''};
  $('ancillaryEditorTitle').textContent=i===null?'Add Ancillary Study':'Edit Ancillary Study';
- $('aeDate').value=x?.date?displayDate(x.date):'';$('aeSpecimen').value=x?.specimen||'Peripheral blood';$('aeAssay').value=x?.assay||'Flow cytometry';$('aeStatus').value=x?.status||'Unknown';$('aeTarget').value=x?.target||'';$('aeValue').value=x?.value??'';$('aeUnits').value=x?.units||'';$('aeLOD').value=x?.lod||'';$('aeSummary').value=x?.summary||'';$('aeRaw').value=x?.raw||'';$('aeNotes').value=x?.notes||'';
- $('ancillaryEditor').style.display='block';$('ancillaryEditor').scrollIntoView({behavior:'smooth',block:'start'})
+ $('aeDate').value=x?.date?displayDate(x.date):'';$('aeSpecimen').value=x?.specimen||'Peripheral blood';
+ let assay=x?.assay||'Flow cytometry';if(['BCR::ABL1 PCR','NPM1 qPCR','FLT3 PCR/qPCR','PCR/qPCR','Other molecular MRD'].includes(assay))assay='Molecular MRD / PCR';
+ $('aeAssay').value=assay;$('aeRaw').value=x?.raw||'';$('aeNotes').value=x?.notes||'';
+ renderAncillaryAssayFields();$('ancillaryEditor').style.display='block';$('ancillaryEditor').scrollIntoView({behavior:'smooth',block:'start'})
 }
-function closeAncillaryEditor(){$('ancillaryEditor').style.display='none';ancillaryEditIndex=null}
+function closeAncillaryEditor(){$('ancillaryEditor').style.display='none';ancillaryEditIndex=null;ancillaryDraft={flow:[],mutations:[],fish:[],cyto:[],molecular:{}}}
 function saveAncillaryEditor(){
  let dr=$('aeDate').value.trim();if(!dr){alert('Enter a study date.');return}let date=normalizeDateText(dr,'Ancillary study date');if(!date)return;
- let o=ancillaryEditIndex===null?{id:'AS'+Date.now()}:D.ancillary[ancillaryEditIndex];
- Object.assign(o,{date,specimen:$('aeSpecimen').value,assay:$('aeAssay').value,status:$('aeStatus').value,target:$('aeTarget').value,value:$('aeValue').value,units:$('aeUnits').value,lod:$('aeLOD').value,summary:$('aeSummary').value,raw:$('aeRaw').value,notes:$('aeNotes').value,source:o.source||'manual abstraction'});
+ let o=ancillaryEditIndex===null?{id:'AS'+Date.now()}:D.ancillary[ancillaryEditIndex],assayData=collectAncillaryAssayData();
+ Object.assign(o,{date,specimen:$('aeSpecimen').value,raw:$('aeRaw').value,notes:$('aeNotes').value,source:o.source||'manual abstraction',...assayData});
  if(ancillaryEditIndex===null)D.ancillary.push(o);D.ancillary.sort((a,b)=>(a.date||'').localeCompare(b.date||''));openAncillaryCards.add(o.id);closeAncillaryEditor();save()
 }
 function deleteAncillary(i){if(confirm('Delete this ancillary study?')){openAncillaryCards.delete(D.ancillary[i]?.id);D.ancillary.splice(i,1);save()}}
-function ancillaryLabel(x){let q=x.value!==''&&x.value!=null?` · ${x.value}${x.units?' '+x.units:''}`:'';return`${x.specimen||'Unknown'} · ${x.assay||'Other'} · ${x.status||'Unknown'}${x.target?' · '+x.target:''}${q}`}
-
-function baselineCBC(){
- let dm=D.marrows.find(x=>x.diagnostic);if(!dm)return{row:null,status:'No diagnostic marrow'};
- let fc=firstCycle(),lo=addDays(dm.date,-14),hi=addDays(dm.date,14);
- let eligible=D.cbc.filter(x=>x.date>=lo&&x.date<=hi&&(!fc||x.date<=fc.start));
- if(D.base.baseline_cbc_override_ts){
-   let r=D.cbc.find(x=>x.timestamp===D.base.baseline_cbc_override_ts);
-   if(r)return{row:r,status:'Manual override',complete:[r.wbc,r.anc,r.hgb,r.plt].every(v=>v!=null)}
- }
- let complete=eligible.filter(x=>[x.wbc,x.anc,x.hgb,x.plt].every(v=>v!=null));
- let pool=complete.length?complete:eligible;
- pool.sort((a,b)=>{
-   let da=Math.abs(dd(dm.date,a.date)),db=Math.abs(dd(dm.date,b.date));
-   if(da!==db)return da-db;
-   let apre=a.date<=dm.date?0:1,bpre=b.date<=dm.date?0:1;
-   if(apre!==bpre)return apre-bpre;
-   return a.timestamp.localeCompare(b.timestamp)
- });
- let row=pool[0]||null;
- return{row,status:row?(complete.length?'Automatic complete CBC':'Closest available CBC; incomplete'):'No eligible CBC within ±14 days',complete:row?[row.wbc,row.anc,row.hgb,row.plt].every(v=>v!=null):false}
+function ancillaryLabel(x){
+ let q=x.value!==''&&x.value!=null?` · ${x.value}${x.units?' '+x.units:''}`:'';
+ let result=x.status&&x.status!=='Unknown'?` · ${x.status}`:'';
+ let target=x.target?` · ${x.target}`:'';
+ return`${x.specimen||'Unknown'} · ${x.assay||'Other'}${result}${target}${q}`
 }
 function setBaselineCBCOverride(ts){D.base.baseline_cbc_override_ts=ts||'';save()}
 
@@ -1707,6 +1840,7 @@ function problems(){
  let dates={};D.marrows.forEach(m=>dates[m.date]=(dates[m.date]||0)+1);Object.entries(dates).filter(([d,n])=>n>1).forEach(([d,n])=>a.push(`${n} marrow records exist on ${displayDate(d)}. This is allowed, but confirm they represent separate procedures rather than duplicate submission.`));
  let cdates={};D.cycles.filter(c=>c.start).forEach(c=>cdates[c.start]=(cdates[c.start]||0)+1);Object.entries(cdates).filter(([d,n])=>n>1).forEach(([d,n])=>a.push(`${n} treatment cycles share start date ${displayDate(d)}. Resolve chronology before relying on cycle numbering.`));
  D.ancillary.filter(x=>x.specimen==='CSF'&&['Positive','Detected'].includes(x.status)).forEach(x=>{if(!['Yes','No','Indeterminate'].includes(D.base.cns_status))a.push(`Positive CSF ancillary study on ${displayDate(x.date)} requires CNS involvement adjudication.`)});
+ D.ancillary.filter(x=>['Pleural fluid','Ascites','Other fluid'].includes(x.specimen)&&['Positive','Detected'].includes(x.status)).forEach(x=>a.push(`Positive ${x.specimen.toLowerCase()} ancillary study on ${displayDate(x.date)}: review possible extramedullary disease status.`));
  let fc=firstCycle();
  D.cycles.forEach(c=>{
    if(c.start&&!plausibleDate(c.start))a.push(`Cycle ${c.n} has an implausible start date (${c.start}).`);
@@ -1808,11 +1942,12 @@ function render(){
  <div class="mutedbox" style="margin-top:8px"><div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap"><div style="min-width:180px"><label>Peripheral blood blasts</label><select onchange="setMarrowAssessment(${i},'pb',this.value)"><option ${m.pb==='Unknown'||!m.pb?'selected':''}>Unknown</option><option ${m.pb==='Absent'?'selected':''}>Absent</option><option ${m.pb==='Present'?'selected':''}>Present</option></select>${m.pbBlastPct!=null?`<span class=small>${m.pbBlastPct}% reported</span>`:''}</div><div style="min-width:180px"><label>Extramedullary disease</label><select onchange="setMarrowAssessment(${i},'emd',this.value)"><option ${m.emd==='Unknown'||!m.emd?'selected':''}>Unknown</option><option value="Absent/resolved" ${m.emd==='Absent/resolved'?'selected':''}>Absent / resolved</option><option ${m.emd==='Present'?'selected':''}>Present</option></select></div>${m.diagnostic?'':`<div style="flex:1"><b>Response readiness:</b> ${ready.state==='Complete'?'<span class="pill ok">Complete</span>':`<span class="pill warn">Incomplete</span> <span class=small>${escHtml(ready.missing.join(', '))}</span>`}</div>`}</div></div>
  ${responseCBC}
  <details style="margin-top:10px"><summary><b>BMBx Data Details</b></summary><div class=detail-grid>
-  <div class=detail-row><div class=detail-row-head><b>Blast Enumeration</b><button class="btn alt" onclick="event.preventDefault();editMarrowSection(${i},'blast')">Edit</button></div><div class=detail-preview>${blastPrev}</div></div>
-  <div class=detail-row><div class=detail-row-head><b>Blast Immunophenotype</b><button class="btn alt" onclick="event.preventDefault();editMarrowSection(${i},'flow')">Edit</button></div><div class=detail-preview>${escHtml(flowPrev)}</div></div>
-  <div class=detail-row><div class=detail-row-head><b>NGS</b><button class="btn alt" onclick="event.preventDefault();editMarrowSection(${i},'ngs')">Edit</button></div><div class=detail-preview>${escHtml(ngsPrev)}</div></div>
-  <div class=detail-row><div class=detail-row-head><b>Conventional Cytogenetics</b><button class="btn alt" onclick="event.preventDefault();editMarrowSection(${i},'cyto')">Edit</button></div><div class=detail-preview>${escHtml(cytoPrev)}</div></div>
-  <div class=detail-row><div class=detail-row-head><b>FISH</b><button class="btn alt" onclick="event.preventDefault();editMarrowSection(${i},'fish')">Edit</button></div><div class=detail-preview>${escHtml(fishPrev)}</div></div>
+  ${['blast','flow','ngs','cyto','fish'].map(domain=>{
+    let label={blast:'Blast Enumeration',flow:'Blast Immunophenotype',ngs:'NGS',cyto:'Conventional Cytogenetics',fish:'FISH'}[domain];
+    let preview={blast:blastPrev,flow:flowPrev,ngs:ngsPrev,cyto:cytoPrev,fish:fishPrev}[domain];
+    let key=m.id+'|'+domain,editing=inlineBmbxEditState.get(key),raw=bmbxRawForDomain(m,domain),review=domainNeedsReview(m,domain);
+    return `<div class=detail-row><div class=detail-row-head><b>${label}${review?'<span class="pill warn review-badge">Needs review</span>':''}</b><div class=detail-actions><button class="btn alt" onclick="event.preventDefault();toggleInlineBmbxEditor(${i},'${domain}')">${editing?'Close editor':'Edit'}</button></div></div><div class=detail-preview>${escHtml(preview)}</div>${editing?inlineEditorHTML(m,i,domain):''}${raw?`<details class=raw-panel><summary class=small>Show raw data</summary><pre style="white-space:pre-wrap;font:inherit;font-size:12px">${escHtml(raw)}</pre></details>`:''}<div class=provenance>${domainReviewFooter(m,domain)}</div></div>`
+  }).join('')}
  </div></details>
  <div class=actions><button class="btn alt" onclick="editMarrow(${i})">Edit full BMBx</button><button class="btn danger" onclick="delMarrow(${i})">Delete BMBx</button></div></div></details>`
 }).join(''):'<p class=help>No confirmed BMBx assessments yet.</p>';
@@ -1821,7 +1956,10 @@ function render(){
  if($('cnsStatus'))$('cnsStatus').value=D.base.cns_status||'Unknown';
  if($('cnsDate'))$('cnsDate').value=D.base.cns_date?displayDate(D.base.cns_date):'';
  if($('cnsBasis'))$('cnsBasis').value=D.base.cns_basis||'';
- if($('ancillaryList'))$('ancillaryList').innerHTML=D.ancillary.length?D.ancillary.map((x,i)=>`<details class="card domain-anc anc-card" ${openAncillaryCards.has(x.id)?'open':''} ontoggle="if(this.open)openAncillaryCards.add('${x.id}');else openAncillaryCards.delete('${x.id}')"><summary><b>${displayDate(x.date)}</b> · ${escHtml(ancillaryLabel(x))}</summary><div style="padding-top:10px"><div class="row three"><div class=metric>Specimen<b>${escHtml(x.specimen||'Unknown')}</b></div><div class=metric>Assay<b>${escHtml(x.assay||'Other')}</b></div><div class=metric>Result<b>${escHtml(x.status||'Unknown')}</b>${x.value!==''&&x.value!=null?`<span class=small>${escHtml(String(x.value))} ${escHtml(x.units||'')}</span>`:''}</div></div>${x.summary?`<div class=mutedbox style="margin-top:8px">${escHtml(x.summary)}</div>`:''}${x.raw?`<details><summary>Raw source</summary><pre style="white-space:pre-wrap;font:inherit;font-size:12px">${escHtml(x.raw)}</pre></details>`:''}<div class=actions><button class="btn alt" onclick="openAncillaryEditor(${i})">Edit</button><button class="btn danger" onclick="deleteAncillary(${i})">Delete</button></div></div></details>`).join(''):'<div class=card><p class=help>No ancillary studies yet.</p></div>';
+ if($('ancillaryList'))$('ancillaryList').innerHTML=D.ancillary.length?D.ancillary.map((x,i)=>{
+   let summary=x.summary||'No structured findings summarized',needs=(x.assay==='Flow cytometry'&&x.status==='Unknown')||(x.assay==='NGS'&&(x.mutations||[]).some(v=>!v.gene))||(x.assay==='FISH'&&(x.fishObservations||[]).some(v=>!v.target||v.result==='Unknown'))||(x.assay==='Molecular MRD / PCR'&&x.value!==''&&!x.units);
+   return `<details class="card domain-anc anc-card" ${openAncillaryCards.has(x.id)?'open':''} ontoggle="if(this.open)openAncillaryCards.add('${x.id}');else openAncillaryCards.delete('${x.id}')"><summary><b>${displayDate(x.date)}</b> · ${escHtml(ancillaryLabel(x))} ${needs?'<span class="pill warn">Needs review</span>':''}</summary><div style="padding-top:10px"><div class=detail-preview>${escHtml(summary)}</div>${x.raw?`<details class=raw-panel><summary class=small>Show raw data</summary><pre style="white-space:pre-wrap;font:inherit;font-size:12px">${escHtml(x.raw)}</pre></details>`:''}<div class=provenance>Source: ${escHtml(x.source||'manual abstraction')}</div><div class=actions><button class="btn alt" onclick="openAncillaryEditor(${i})">Edit</button><button class="btn danger" onclick="deleteAncillary(${i})">Delete</button></div></div></details>`
+ }).join(''):'<div class=card><p class=help>No ancillary studies yet.</p></div>';
 
 
  let dm=D.marrows.find(x=>x.diagnostic);if(dm){D.base.dx_auto=dm.date;if(!D.base.dx||!D.base.dx_overridden)D.base.dx=dm.date}let e=eln(),bp=dm?preferredBlast(dm):{value:null,source:''};
@@ -1861,7 +1999,7 @@ function render(){
  ev.sort((a,b)=>a.date.localeCompare(b.date));$('tl').innerHTML=ev.map(x=>`<div class="event event-${x.type}"><b>${displayDate(x.date)}</b><div>${escHtml(x.text)}</div></div>`).join('')||'<p class=help>No dated events.</p>'
 }
 function dl(n,t,type='text/plain'){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type}));a.download=n;a.click()}
-function jsonOut(){dl((D.base.study||'AML-demo')+'_V4.0.json',JSON.stringify(D,null,2),'application/json')}
+function jsonOut(){dl((D.base.study||'AML-demo')+'_V4.1.json',JSON.stringify(D,null,2),'application/json')}
 function csv(rows){if(!rows.length)return'';let k=[...new Set(rows.flatMap(Object.keys))];return[k.join(','),...rows.map(r=>k.map(x=>`"${String(r[x]??'').replaceAll('"','""')}"`).join(','))].join('\n')}
 function csvOut(k){
  let r=k==='cycles'?D.cycles.map(x=>({study_id:D.base.study,...x})):
@@ -1880,7 +2018,13 @@ function csvOut(k){
  D.marrows.flatMap(m=>m.mutations.map(x=>({study_id:D.base.study,marrow_id:m.id,marrow_date:m.date,...x})));
  dl(k+'.csv',csv(r),'text/csv')
 }
-function resetAll(){if(confirm('Clear locally stored demo data?')){localStorage.removeItem(K);location.reload()}}
+function resetAll(){
+ if(confirm('Clear all data for the current patient from this browser? This will clear Treatment Cycles, BMBx, Ancillary Studies, CBC Trend, outcomes, and Smart Import staging.')){
+   ['AML_AV_V41','AML_AV_V40','AML_AV_V32','AML_AV_V31','AML_AV_V30','AML_AV_V210'].forEach(k=>localStorage.removeItem(k));
+   smartMultiStage={cycles:[],bmbx:[],ancillary:[],cbc:[]};
+   location.reload()
+ }
+}
 if($('smartEndpoint'))$('smartEndpoint').value=localStorage.getItem('AML_SMART_ENDPOINT')||'';render();toggleQuickMRD();
 </script>
 </body>
