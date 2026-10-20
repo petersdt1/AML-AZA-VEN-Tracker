@@ -1,24 +1,32 @@
-# AML AZA/VEN Tracker V3.2
+# AML AZA/VEN Tracker V4.0
 
-V3.2 introduces the Smart Import architecture for heterogeneous marrow reports.
+V4.0 is the Smart Import + longitudinal-domain redesign.
 
-## Smart Import
-- One unified free-text source box for mixed pathology, flow, cytogenetics, FISH, and molecular reports.
-- Optional institution-hosted AI extraction endpoint using a strict observation-only JSON schema.
-- No API key is stored or requested by the static page. The endpoint URL alone is stored locally.
-- If no endpoint is configured, a local deterministic parser fallback builds a draft so the workflow can be tested now.
-- A Copy AI extraction prompt + Manual AI JSON handoff provides an immediately testable bridge before a backend endpoint exists.
-- Every extraction is converted into the existing structured BMBx schema, then reviewed in the same editable BMBx editor before saving.
-- AI is explicitly prohibited from assigning ELN risk, response, complex karyotype, AML-MR status, or eligibility. Those remain deterministic app calculations.
-- AI schema preserves Positive vs Negative FISH/rearrangement results and requires Unknown/null instead of unsupported inference.
-- Explicit tested-gene coverage is distinct from detected variants; absence from a report is not interpreted as negative.
-- Evidence snippets and extraction warnings are retained with the draft.
-- AI/parser numeric disagreements are surfaced as review flags.
-- The original unified source text is retained read-only in the structured editor for provenance.
+## Major changes
+- Legacy segmented marrow-import UI removed.
+- Smart Import is now the single staging front door for heterogeneous pasted source text.
+- One paste can propose records in four independently reviewable domains:
+  - Treatment Cycles
+  - Bone Marrow (BMBx)
+  - Ancillary Studies
+  - CBC Trend
+- Each domain can be edited, selected/deselected, and accepted independently.
+- Embedded CBC observations can be staged separately from a BMBx or note.
+- Treatment-cycle statements can create proposed cycle records while preserving the source cycle label separately from chronology-derived cycle numbering.
+- New Ancillary Studies tab for peripheral blood, CSF, pleural fluid, and other non-marrow studies.
+- Positive CSF studies prompt CNS-involvement adjudication rather than automatically assigning CNS disease.
+- Ancillary studies appear on the longitudinal timeline and export separately.
+- BMBx cards cleaned up:
+  - larger summary header
+  - subtle response color coding
+  - redundant pretreatment/assessment-detail blocks removed
+  - Response CBC Recovery shown directly below PB blasts/EMD/readiness
+  - separate Best ANC Response and Best Platelet Response selectors
+  - G-CSF and platelet-transfusion 7-day context
+  - consolidated BMBx Data Details
+  - per-domain Edit buttons for Blast Enumeration, Flow, NGS, Cytogenetics, and FISH
+- Treatment Cycles, BMBx, and Ancillary Studies use subtle distinct domain colors that carry into the timeline.
 
-## Existing workflows preserved
-- CBC trend import remains deterministic.
-- The prior segmented marrow import is retained under a collapsed Legacy parser fallback section.
-- V3.1 localStorage migrates into V3.2.
+The deterministic ELN 2022 / ELN 2024 LI and response engines remain downstream of extraction.
 
-This remains a de-identified prototype. Do not send PHI to an unapproved endpoint or public service.
+De-identified prototype only. Do not use public/static hosting for PHI.
